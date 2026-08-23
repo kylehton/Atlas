@@ -11,6 +11,7 @@ COMMANDS = {
     "test-e2e": ("test-e2e.sh",),
     "test-integration": ("test-integration.sh",),
     "test-unit": ("test-unit.sh",),
+    "typecheck": ("typecheck.sh",),
 }
 
 

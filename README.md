@@ -23,7 +23,8 @@ through natural conversation.
 - Locked Python dependency management with uv
 - Local Docker Compose stack with Postgres, Caddy, and optional llama.cpp
 - Production Compose configuration for an EC2 host and Supabase Postgres
-- Commands for formatting, linting, unit tests, integration tests, and E2E tests
+- Commands for formatting, linting, strict type checking, and focused test suites
+- GitHub Actions CI for quality checks, migrations, tests, and secret scanning
 - Isolated container build and smoke validation
 - ECR image publishing and EC2 deployment automation
 
@@ -169,11 +170,12 @@ After activating `.venv`, the following shortcuts are available:
 | --- | --- |
 | `atlas run lint` | Check all Python and Markdown files without changing them. |
 | `atlas run format` | Apply Python and Markdown lint fixes and formatting. |
+| `atlas run typecheck` | Type-check the Python package. |
 | `atlas run test` | Run unit, integration, and E2E suites in that order. |
 | `atlas run test-unit` | Run only focused unit tests. |
 | `atlas run test-integration` | Run only boundary and service integration tests. |
 | `atlas run test-e2e` | Run only complete user-flow tests. |
-| `atlas run build` | Format, lint, test, build the app image, run an isolated container smoke test, and tear it down. |
+| `atlas run build` | Format, lint, type-check, test, build the app image, run an isolated container smoke test, and tear it down. |
 | `atlas run deploy` | Run the build gate, push the app image to ECR, migrate, and deploy it to EC2. |
 
 Arguments can be passed directly to the individual test scripts when finer pytest control is needed:
@@ -199,13 +201,14 @@ The build command:
 
 1. Applies formatting.
 2. Checks linting and formatting.
-3. Runs all three test suites.
-4. Builds the shared API/worker/scheduler image.
-5. Creates an isolated temporary Compose project.
-6. Starts Postgres, runs migrations, and checks worker/scheduler imports.
-7. Starts API, scheduler, and Caddy.
-8. Requests `/openapi.json` through Caddy.
-9. Removes its temporary containers, network, and volumes even on failure.
+3. Type-checks the package.
+4. Runs all three test suites.
+5. Builds the shared API/worker/scheduler image.
+6. Creates an isolated temporary Compose project.
+7. Starts Postgres, runs migrations, and checks worker/scheduler imports.
+8. Starts API, scheduler, and Caddy.
+9. Requests `/openapi.json` through Caddy.
+10. Removes its temporary containers, network, and volumes even on failure.
 
 The smoke stack uses port `18080` by default. Override it with `ATLAS_BUILD_HTTP_PORT` if necessary.
 It does not start llama.cpp because model selection is still pending.

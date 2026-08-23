@@ -74,7 +74,7 @@ class JsonFormatter(logging.Formatter):
         event_data = getattr(record, "event_data", None)
         if isinstance(event_data, dict):
             payload.update(redact(event_data))
-        if record.exc_info:
+        if record.exc_info and record.exc_info[0]:
             payload["exception"] = record.exc_info[0].__name__
         return json.dumps(payload, separators=(",", ":"), sort_keys=True)
 
