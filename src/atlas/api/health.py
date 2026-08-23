@@ -16,6 +16,8 @@ def liveness() -> dict[str, str]:
 
 @router.get("/ready", response_model=None)
 def readiness(request: Request) -> dict[str, str] | JSONResponse:
+    """Report readiness only when the configured database accepts a query."""
+
     try:
         with request.app.state.database_engine.connect() as connection:
             connection.execute(text("SELECT 1"))

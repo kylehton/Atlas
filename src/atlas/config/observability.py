@@ -42,6 +42,8 @@ def get_correlation_id() -> str | None:
 
 
 def redact(value: Any, *, key: str | None = None) -> Any:
+    """Recursively remove secrets from structured values and common credential strings."""
+
     normalized_key = (key or "").lower().replace("-", "_")
     if normalized_key and any(part in normalized_key for part in SENSITIVE_KEY_PARTS):
         return REDACTED
@@ -62,6 +64,8 @@ def redact(value: Any, *, key: str | None = None) -> Any:
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
+        """Render one redacted log record as compact JSON."""
+
         payload: dict[str, Any] = {
             "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,

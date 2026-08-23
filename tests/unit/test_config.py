@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from atlas.config import Settings
+from atlas.config.config import Settings
 
 
 def test_production_rejects_local_database() -> None:

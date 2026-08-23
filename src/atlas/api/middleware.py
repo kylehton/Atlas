@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request
 
-from atlas.observability import reset_correlation_id, set_correlation_id
+from atlas.config.observability import reset_correlation_id, set_correlation_id
 
 logger = logging.getLogger(__name__)
 CORRELATION_HEADER = "X-Request-ID"
@@ -13,6 +13,8 @@ _valid_correlation_id = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 
 
 def _correlation_id(request: Request) -> str:
+    """Reuse a safe request ID from the caller or generate a UUID."""
+
     supplied = request.headers.get(CORRELATION_HEADER)
     if supplied and _valid_correlation_id.fullmatch(supplied):
         return supplied
@@ -20,6 +22,8 @@ def _correlation_id(request: Request) -> str:
 
 
 def add_request_context(app: FastAPI) -> None:
+    """Attach correlation IDs and structured completion logging to every request."""
+
     @app.middleware("http")
     async def request_context(request: Request, call_next):  # type: ignore[no-untyped-def]
         correlation_id = _correlation_id(request)

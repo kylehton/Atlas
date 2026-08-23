@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     )
     @classmethod
     def validate_optional_secret(cls, value: object) -> object:
+        """Normalize blank secrets and reject common placeholder values."""
+
         if isinstance(value, str):
             stripped = value.strip()
             if not stripped:
@@ -41,6 +43,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_database(self) -> "Settings":
+        """Require production to use a remote PostgreSQL database with a real password."""
+
         try:
             database = make_url(self.database_url)
         except Exception as error:

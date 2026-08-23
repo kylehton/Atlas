@@ -1,7 +1,7 @@
 import json
 import logging
 
-from atlas.observability import JsonFormatter, reset_correlation_id, set_correlation_id
+from atlas.config.observability import JsonFormatter, reset_correlation_id, set_correlation_id
 
 
 def test_json_logging_redacts_secrets_and_includes_correlation_id() -> None:

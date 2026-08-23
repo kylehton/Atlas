@@ -23,9 +23,9 @@ dev = [
 
 [project.scripts]
 atlas = "atlas.cli:main"
-atlas-api = "atlas.main:run"
-atlas-worker = "atlas.worker:run"
-atlas-scheduler = "atlas.scheduler:run"
+atlas-api = "atlas.api.app:run"
+atlas-worker = "atlas.background.worker:run"
+atlas-scheduler = "atlas.background.scheduler:run"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]

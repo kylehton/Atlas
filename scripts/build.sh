@@ -30,9 +30,9 @@ docker compose --project-name "$project_name" build api
 docker compose --project-name "$project_name" up --detach postgres
 docker compose --project-name "$project_name" run --rm api alembic upgrade head
 docker compose --project-name "$project_name" run --rm --no-deps worker \
-  python -c "from atlas.worker import run; assert callable(run)"
+  python -c "from atlas.background.worker import run; assert callable(run)"
 docker compose --project-name "$project_name" run --rm --no-deps scheduler \
-  python -c "from atlas.scheduler import run; assert callable(run)"
+  python -c "from atlas.background.scheduler import run; assert callable(run)"
 docker compose --project-name "$project_name" up --detach api scheduler caddy
 
 for _ in {1..30}; do

@@ -2,9 +2,9 @@ import httpx
 import pytest
 from sqlalchemy import create_engine
 
-from atlas.config import Settings
-from atlas.http import CORRELATION_HEADER
-from atlas.main import create_app
+from atlas.api.app import create_app
+from atlas.api.middleware import CORRELATION_HEADER
+from atlas.config.config import Settings
 
 
 @pytest.fixture

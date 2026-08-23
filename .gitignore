@@ -1,7 +1,8 @@
 .agents
 .specify
 /specs
-personal-productivity-agent-build-plan.md
+STARTING-POINT.md
+PROJECT_CHECKLIST.md
 
 # Local secrets and environment
 .env

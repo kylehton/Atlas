@@ -1,7 +1,7 @@
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from atlas.config import Settings
+from atlas.config.config import Settings
 
 
 def create_database_engine(settings: Settings) -> Engine:

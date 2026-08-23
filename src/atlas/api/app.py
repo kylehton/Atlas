@@ -5,14 +5,16 @@ import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Engine
 
-from atlas.config import Settings, get_settings
+from atlas.api.health import router as health_router
+from atlas.api.middleware import add_request_context
+from atlas.config.config import Settings, get_settings
+from atlas.config.observability import configure_logging
 from atlas.db.session import create_database_engine
-from atlas.health import router as health_router
-from atlas.http import add_request_context
-from atlas.observability import configure_logging
 
 
 def create_app(settings: Settings | None = None, database_engine: Engine | None = None) -> FastAPI:
+    """Create the API with explicit dependencies when provided, or configured defaults."""
+
     resolved_settings = settings or get_settings()
     resolved_engine = database_engine or create_database_engine(resolved_settings)
     configure_logging(resolved_settings.log_level)
@@ -34,7 +36,7 @@ app = create_app()
 
 
 def run() -> None:
-    uvicorn.run("atlas.main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("atlas.api.app:app", host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":
