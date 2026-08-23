@@ -1,2 +1,1 @@
 """Atlas personal productivity agent."""
-

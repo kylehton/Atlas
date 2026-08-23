@@ -17,15 +17,17 @@ dependencies = [
 dev = [
     "pytest>=9.1,<10",
     "ruff>=0.16,<1",
+    "rumdl>=0.2.57,<0.3",
 ]
 
 [project.scripts]
+atlas = "atlas.cli:main"
 atlas-api = "atlas.main:run"
 atlas-worker = "atlas.worker:run"
 atlas-scheduler = "atlas.scheduler:run"
 
 [build-system]
-requires = ["uv_build>=0.9.18,<0.10.0"]
+requires = ["uv_build>=0.12.5,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -41,3 +43,11 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.rumdl]
+line-length = 100
+
+[tool.rumdl.MD013]
+code-blocks = false
+tables = false
+reflow = true

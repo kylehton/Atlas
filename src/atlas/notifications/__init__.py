@@ -1,2 +1,1 @@
 """Notification delivery and aggregation."""
-

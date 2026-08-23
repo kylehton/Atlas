@@ -1,0 +1,80 @@
+x-atlas-service: &atlas-service
+  image: ${ATLAS_APP_IMAGE:-atlas:local}
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    ATLAS_DATABASE_URL: postgresql+psycopg://atlas:${ATLAS_POSTGRES_PASSWORD:-atlas}@postgres:5432/atlas
+    ATLAS_MODEL_BASE_URL: http://model:8080
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *atlas-service
+    command: atlas-api
+
+  worker:
+    <<: *atlas-service
+    command: atlas-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      model:
+        condition: service_started
+
+  scheduler:
+    <<: *atlas-service
+    command: atlas-scheduler
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: atlas
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:-atlas}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  model:
+    image: ${ATLAS_LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-b10524}
+    command:
+      - --model
+      - /models/${ATLAS_MODEL_FILE:-model.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - ${ATLAS_MODEL_CONTEXT_SIZE:-4096}
+    volumes:
+      - ./models:/models:ro
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - api
+    ports:
+      - ${ATLAS_HTTP_PORT:-8080}:80
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

@@ -10,4 +10,3 @@ def create_database_engine(settings: Settings) -> Engine:
 
 def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(bind=engine, expire_on_commit=False)
-

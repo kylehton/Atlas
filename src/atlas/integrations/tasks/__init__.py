@@ -1,2 +1,1 @@
 """Tasks and reminders capability."""
-

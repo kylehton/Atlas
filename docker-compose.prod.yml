@@ -1,0 +1,59 @@
+x-atlas-service: &atlas-service
+  image: ${ATLAS_APP_IMAGE:?ATLAS_APP_IMAGE must be set}
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    ATLAS_MODEL_BASE_URL: http://model:8080
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *atlas-service
+    command: atlas-api
+
+  worker:
+    <<: *atlas-service
+    command: atlas-worker
+    depends_on:
+      model:
+        condition: service_started
+
+  scheduler:
+    <<: *atlas-service
+    command: atlas-scheduler
+
+  model:
+    image: ${ATLAS_LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-b10524}
+    command:
+      - --model
+      - /models/${ATLAS_MODEL_FILE:-model.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - ${ATLAS_MODEL_CONTEXT_SIZE:-4096}
+    volumes:
+      - ${ATLAS_MODEL_DIR:-./models}:/models:ro
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      ATLAS_SITE_ADDRESS: ${ATLAS_SITE_ADDRESS:?ATLAS_SITE_ADDRESS must be set}
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:
