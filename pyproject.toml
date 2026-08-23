@@ -1,0 +1,43 @@
+[project]
+name = "atlas-personal-assistant"
+version = "0.1.0"
+description = "A privacy-focused personal productivity agent"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.19,<2",
+    "fastapi>=0.141,<1",
+    "httpx>=0.28,<1",
+    "psycopg[binary]>=3.3,<4",
+    "pydantic-settings>=2.15,<3",
+    "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.52,<1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1,<10",
+    "ruff>=0.16,<1",
+]
+
+[project.scripts]
+atlas-api = "atlas.main:run"
+atlas-worker = "atlas.worker:run"
+atlas-scheduler = "atlas.scheduler:run"
+
+[build-system]
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "src"
+module-name = "atlas"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
