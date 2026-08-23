@@ -97,6 +97,10 @@ VS Code is configured to discover `.venv` and use uv instead of invoking `pip`.
 Docker Compose has development defaults, so `.env` is optional for the current scaffold. Create one
 when overriding these values:
 
+```bash
+cp .env.example .env
+```
+
 ```dotenv
 ATLAS_POSTGRES_PASSWORD=atlas
 ATLAS_HTTP_PORT=8080

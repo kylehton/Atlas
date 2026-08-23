@@ -35,7 +35,7 @@ docker compose --project-name "$project_name" run --rm --no-deps scheduler \
 docker compose --project-name "$project_name" up --detach api scheduler caddy
 
 for _ in {1..30}; do
-  if curl --fail --silent "http://127.0.0.1:$ATLAS_HTTP_PORT/openapi.json" >/dev/null; then
+  if curl --fail --silent "http://127.0.0.1:$ATLAS_HTTP_PORT/health/ready" >/dev/null; then
     echo "Atlas container build and smoke check passed."
     exit 0
   fi
