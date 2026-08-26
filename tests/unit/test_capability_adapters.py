@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from atlas.inference import (
     InferenceCapability,
@@ -33,6 +33,7 @@ from atlas.notifications import (
     NotificationCapability,
     NotificationRequest,
 )
+from atlas.shared import CapabilityName, ProviderName
 from atlas.telegram import InMemoryTelegram, TelegramButton, TelegramCapability
 
 
@@ -157,3 +158,9 @@ def test_shared_field_types_enforce_runtime_limits() -> None:
 
     with pytest.raises(ValidationError):
         NotificationRequest(user_id=UUID(int=1001), text="x" * 2_001)
+
+    with pytest.raises(ValidationError):
+        TypeAdapter(ProviderName).validate_python("")
+
+    with pytest.raises(ValidationError):
+        TypeAdapter(CapabilityName).validate_python("x" * 33)

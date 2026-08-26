@@ -173,7 +173,7 @@ After activating `.venv`, the following shortcuts are available:
 | `atlas run typecheck` | Type-check the Python package. |
 | `atlas run test` | Run unit, integration, and E2E suites in that order. |
 | `atlas run test-unit` | Run only focused unit tests. |
-| `atlas run test-integration` | Run only boundary and service integration tests. |
+| `atlas run test-integration` | Run service and PostgreSQL-backed integration tests. |
 | `atlas run test-e2e` | Run only complete user-flow tests. |
 | `atlas run build` | Format, lint, type-check, test, build the app image, run an isolated container smoke test, and tear it down. |
 | `atlas run deploy` | Run the build gate, push the app image to ECR, migrate, and deploy it to EC2. |
@@ -185,7 +185,9 @@ Arguments can be passed directly to the individual test scripts when finer pytes
 ./scripts/test-integration.sh -x
 ```
 
-The test commands explicitly report empty suites during initial development.
+Integration tests start a disposable PostgreSQL container, apply migrations, and remove it after the
+suite. Set `ATLAS_TEST_DATABASE_URL` to use an existing dedicated test database instead. Empty test
+suites are reported explicitly during initial development.
 
 ---
 
