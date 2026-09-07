@@ -127,6 +127,17 @@ the same value for `secret_token`. Atlas checks Telegram's
 `X-Telegram-Bot-Api-Secret-Token` header before parsing an update. Only private text messages and
 inline-button callbacks are currently processed.
 
+For an opt-in real Telegram round-trip test, install `cloudflared` and run:
+
+```bash
+brew install cloudflared
+atlas run test-telegram-live
+```
+
+The command refuses to replace an existing bot webhook. It creates an isolated local stack and
+Quick Tunnel, guides you through two messages and one button click, then deletes the temporary
+webhook and test environment. It is intentionally excluded from normal tests, builds, and CI.
+
 ### Local model
 
 Place a GGUF model in `models/` and make `ATLAS_MODEL_FILE` match its filename:
@@ -138,31 +149,34 @@ models/
 
 ### Start the local stack
 
-To start API, scheduler, local Postgres, and Caddy without llama.cpp:
+To build the application, start API, scheduler, local Postgres, and Caddy without llama.cpp, apply
+migrations, and wait for readiness:
 
 ```bash
-docker compose up --build postgres api scheduler caddy
+atlas run start
 ```
 
-The FastAPI schema is then available through Caddy at:
+The command prints the local URL when Atlas is ready. Stop the stack while preserving local database
+data with:
+
+```bash
+atlas run stop
+```
+
+The API and FastAPI schema use these default URLs:
 
 ```text
+http://localhost:8080
 http://localhost:8080/openapi.json
 ```
 
-After adding a model file, start the complete stack:
+After configuring a local model, start the complete stack directly:
 
 ```bash
 docker compose up --build
 ```
 
-Stop the stack while preserving local database data:
-
-```bash
-docker compose down
-```
-
-To also delete the local Postgres and Caddy volumes:
+To stop the stack and also delete the local Postgres and Caddy volumes:
 
 ```bash
 docker compose down --volumes
@@ -182,12 +196,15 @@ After activating `.venv`, the following shortcuts are available:
 
 | Command | Purpose |
 | --- | --- |
-| `atlas run lint` | Check all Python and Markdown files without changing them. |
+| `atlas run lint` | Lint and type-check all Python and Markdown files without changing them. |
 | `atlas run format` | Apply Python and Markdown lint fixes and formatting. |
-| `atlas run typecheck` | Type-check the Python package. |
+| `atlas run start` | Build, migrate, and start the local Atlas stack without inference. |
+| `atlas run stop` | Stop the local Atlas stack while preserving database data. |
+| `atlas run typecheck` | Run only the Python type checker. |
 | `atlas run test` | Run unit, integration, and E2E suites in that order. |
 | `atlas run test-unit` | Run only focused unit tests. |
 | `atlas run test-integration` | Run service and PostgreSQL-backed integration tests. |
+| `atlas run test-telegram-live` | Run the opt-in real Telegram and Quick Tunnel smoke test. |
 | `atlas run test-e2e` | Run only complete user-flow tests. |
 | `atlas run build` | Format, lint, type-check, test, build the app image, run an isolated container smoke test, and tear it down. |
 | `atlas run deploy` | Run the build gate, push the app image to ECR, migrate, and deploy it to EC2. |

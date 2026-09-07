@@ -13,7 +13,6 @@ done
 
 ./scripts/quality.sh fix
 ./scripts/quality.sh check
-./scripts/typecheck.sh
 ./scripts/test.sh
 
 project_name=atlas-build-check

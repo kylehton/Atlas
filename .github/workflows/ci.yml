@@ -22,10 +22,8 @@ jobs:
           enable-cache: true
       - name: Install dependencies
         run: uv sync --locked
-      - name: Lint Python and Markdown
+      - name: Lint and type-check Python and Markdown
         run: uv run atlas run lint
-      - name: Type-check Python
-        run: uv run atlas run typecheck
 
   tests:
     name: Migrations and tests

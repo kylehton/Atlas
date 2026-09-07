@@ -9,6 +9,7 @@ case "${1:-check}" in
     uv run --locked ruff check .
     uv run --locked ruff format --check .
     uv run --locked rumdl check .
+    ./scripts/typecheck.sh
     ;;
   fix)
     uv run --locked ruff check --fix .
