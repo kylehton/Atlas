@@ -41,7 +41,14 @@ class ExternalIdentity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         UniqueConstraint(
             "provider",
             "provider_user_id",
-            name="uq_external_identities_provider_user",
+            name="uq_external_identities_provider_user_id",
+            comment=("Ensures one external provider user ID maps to at most one Atlas user."),
+        ),
+        UniqueConstraint(
+            "user_id",
+            "provider",
+            name="uq_external_identities_provider",
+            comment="Ensures an Atlas user has at most one external identity for a given provider.",
         ),
     )
 

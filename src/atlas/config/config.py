@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 from typing import Literal
 
@@ -59,6 +60,17 @@ class Settings(BaseSettings):
             raise ValueError("production database_url must use a remote database host")
         if database.password in {None, "", "atlas", "changeme"}:
             raise ValueError("production database_url must use a non-placeholder password")
+        return self
+
+    @model_validator(mode="after")
+    def validate_telegram_webhook_secret(self) -> "Settings":
+        """Match Telegram's allowed webhook-secret characters and length."""
+
+        if self.telegram_webhook_secret is None:
+            return self
+        secret = self.telegram_webhook_secret.get_secret_value()
+        if re.fullmatch(r"[A-Za-z0-9_-]{1,256}", secret) is None:
+            raise ValueError("telegram_webhook_secret contains unsupported characters")
         return self
 
 

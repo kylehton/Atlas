@@ -36,4 +36,5 @@ export ATLAS_DATABASE_URL=$test_database_url
 export ATLAS_TEST_DATABASE_URL=$test_database_url
 
 uv run --locked alembic upgrade head
+uv run --locked alembic check
 ./scripts/_pytest.sh tests/integration "$@"

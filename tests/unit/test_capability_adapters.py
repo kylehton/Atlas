@@ -133,6 +133,7 @@ async def test_message_notification_and_inference_adapters_record_results() -> N
         text="Create this event?",
         buttons=(TelegramButton(text="Confirm", callback_data="confirm:event-1"),),
     )
+    await telegram.answer_callback_query(query_id="callback-1", text="Confirmed")
     delivery = await notifications.deliver(
         NotificationRequest(user_id=UUID(int=1001), text="Event starts soon", priority="urgent")
     )
@@ -140,6 +141,7 @@ async def test_message_notification_and_inference_adapters_record_results() -> N
     assert response.text == "calendar.list"
     assert inference_adapter.requests[0].task == "intent"
     assert telegram_adapter.sent_messages == [message]
+    assert telegram_adapter.callback_answers[0].query_id == "callback-1"
     assert notification_adapter.deliveries == [delivery]
 
 
@@ -164,3 +166,6 @@ def test_shared_field_types_enforce_runtime_limits() -> None:
 
     with pytest.raises(ValidationError):
         TypeAdapter(CapabilityName).validate_python("x" * 33)
+
+    with pytest.raises(ValidationError):
+        TelegramButton(text="Confirm", callback_data="é" * 64)

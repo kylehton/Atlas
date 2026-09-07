@@ -37,6 +37,28 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_users")),
     )
     op.create_table(
+        "telegram_processed_update_ids",
+        sa.Column(
+            "update_id",
+            sa.BigInteger(),
+            nullable=False,
+            autoincrement=False,
+            comment="Telegram webhook update identifier used as the deduplication key.",
+        ),
+        sa.Column(
+            "received_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+            comment="Time the Telegram update was first accepted by Atlas.",
+        ),
+        sa.PrimaryKeyConstraint("update_id", name=op.f("pk_telegram_processed_update_ids")),
+        comment=(
+            "Stores only Telegram update IDs and receipt timestamps to prevent duplicate webhook "
+            "processing. Does not store message payloads."
+        ),
+    )
+    op.create_table(
         "external_identities",
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.Column("provider", sa.String(length=32), nullable=False),
@@ -63,8 +85,30 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_external_identities")),
         sa.UniqueConstraint(
-            "provider", "provider_user_id", name="uq_external_identities_provider_user"
+            "provider",
+            "provider_user_id",
+            name="uq_external_identities_provider_user_id",
+            comment=(
+                "Ensures one external provider user ID maps to at most one Atlas user within a "
+                "provider."
+            ),
         ),
+        sa.UniqueConstraint(
+            "user_id",
+            "provider",
+            name="uq_external_identities_provider",
+            comment="Ensures an Atlas user has at most one external identity for a provider.",
+        ),
+    )
+    op.execute(
+        "COMMENT ON CONSTRAINT uq_external_identities_provider_user_id "
+        "ON external_identities IS "
+        "'Ensures one external provider user ID maps to at most one Atlas user within a provider.'"
+    )
+    op.execute(
+        "COMMENT ON CONSTRAINT uq_external_identities_provider "
+        "ON external_identities IS "
+        "'Ensures an Atlas user has at most one external identity for a provider.'"
     )
     op.create_index(
         op.f("ix_external_identities_user_id"), "external_identities", ["user_id"], unique=False
@@ -219,5 +263,6 @@ def downgrade() -> None:
     op.drop_table("integrations")
     op.drop_index(op.f("ix_external_identities_user_id"), table_name="external_identities")
     op.drop_table("external_identities")
+    op.drop_table("telegram_processed_update_ids")
     op.drop_table("users")
     # ### end Alembic commands ###

@@ -1,5 +1,9 @@
-from atlas.shared.field_types import LongText
-from atlas.telegram.contracts import SentTelegramMessage, TelegramButton
+from atlas.shared.field_types import ExternalId, LongText, ShortText
+from atlas.telegram.contracts import (
+    SentTelegramMessage,
+    TelegramButton,
+    TelegramCallbackAnswer,
+)
 
 
 class InMemoryTelegram:
@@ -7,6 +11,7 @@ class InMemoryTelegram:
 
     def __init__(self) -> None:
         self.sent_messages: list[SentTelegramMessage] = []
+        self.callback_answers: list[TelegramCallbackAnswer] = []
 
     async def send_message(
         self,
@@ -25,3 +30,13 @@ class InMemoryTelegram:
         )
         self.sent_messages.append(message)
         return message
+
+    async def answer_callback_query(
+        self,
+        *,
+        query_id: ExternalId,
+        text: ShortText | None = None,
+    ) -> None:
+        """Record a callback acknowledgement instead of contacting Telegram."""
+
+        self.callback_answers.append(TelegramCallbackAnswer(query_id=query_id, text=text))

@@ -113,6 +113,20 @@ ATLAS_LLAMA_CPP_IMAGE=ghcr.io/ggml-org/llama.cpp:server-b10524
 `.env` files and model weights are ignored by Git. Never commit secrets, OAuth credentials, tokens,
 or private user data.
 
+### Telegram
+
+Set the bot token issued by BotFather and a private webhook secret:
+
+```dotenv
+ATLAS_TELEGRAM_BOT_TOKEN=<bot-token>
+ATLAS_TELEGRAM_WEBHOOK_SECRET=<random-letters-numbers-underscores-or-hyphens>
+```
+
+Register the public HTTPS endpoint `/webhooks/telegram` with Telegram's `setWebhook` method and use
+the same value for `secret_token`. Atlas checks Telegram's
+`X-Telegram-Bot-Api-Secret-Token` header before parsing an update. Only private text messages and
+inline-button callbacks are currently processed.
+
 ### Local model
 
 Place a GGUF model in `models/` and make `ATLAS_MODEL_FILE` match its filename:
@@ -185,9 +199,10 @@ Arguments can be passed directly to the individual test scripts when finer pytes
 ./scripts/test-integration.sh -x
 ```
 
-Integration tests start a disposable PostgreSQL container, apply migrations, and remove it after the
-suite. Set `ATLAS_TEST_DATABASE_URL` to use an existing dedicated test database instead. Empty test
-suites are reported explicitly during initial development.
+Integration tests start a disposable PostgreSQL container, apply migrations, check for
+ORM/migration drift, and remove it after the suite. Set `ATLAS_TEST_DATABASE_URL` to use an existing
+dedicated test database instead. Empty test suites are reported explicitly during initial
+development.
 
 ---
 
