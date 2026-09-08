@@ -93,7 +93,7 @@ class SettingsService:
             raise ValueError("settings credential lifetimes must be positive")
         self._session_factory = session_factory
         self._public_base_url = public_base_url.rstrip("/")
-        self._redirect_uri = f"{self._public_base_url}/settings/auth/telegram/callback"
+        self._redirect_uri = f"{self._public_base_url}/auth/telegram/callback"
         self._telegram_auth = telegram_auth
         self._login_request_ttl = login_request_ttl
         self._session_ttl = session_ttl
@@ -134,8 +134,8 @@ class SettingsService:
                 expires_at=expires_at,
             )
         )
-        settings_url = f"{self._public_base_url}/settings#login={quote(request_token)}"
-        return IssuedSettingsLoginRequest(url=settings_url, expires_at=expires_at)
+        notifications_url = f"{self._public_base_url}/notifications#login={quote(request_token)}"
+        return IssuedSettingsLoginRequest(url=notifications_url, expires_at=expires_at)
 
     def begin_telegram_login(self, request_token: str) -> TelegramLoginStart:
         """Bind a valid settings link to a fresh OIDC state, nonce, and PKCE verifier."""

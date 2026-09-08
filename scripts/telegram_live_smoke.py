@@ -303,13 +303,15 @@ def _run_live_smoke() -> None:
 
         _wait_for_http(f"{local_url}/health/ready")
         tunnel, public_url = _start_reachable_quick_tunnel(local_url)
-        telegram_callback_url = f"{public_url}/settings/auth/telegram/callback"
+        telegram_callback_url = f"{public_url}/auth/telegram/callback"
 
-        print("\nTelegram browser login requires this temporary callback URL:")
+        print("\nTelegram browser login requires this temporary Trusted Origin:")
+        print(public_url)
+        print("And this temporary Redirect URI:")
         print(telegram_callback_url)
         print(
-            "In BotFather, open this bot's Login Widget settings, add that exact Allowed URL, "
-            "and copy its Client ID and Client Secret into .env as "
+            "In BotFather, open this bot's Login Widget settings, add both values, and copy its "
+            "Client ID and Client Secret into .env as "
             "ATLAS_TELEGRAM_LOGIN_CLIENT_ID and ATLAS_TELEGRAM_LOGIN_CLIENT_SECRET."
         )
         input("Press Enter after the BotFather URL and .env credentials are configured... ")
@@ -324,8 +326,8 @@ def _run_live_smoke() -> None:
 
         environment["ATLAS_PUBLIC_BASE_URL"] = public_url
         _run_compose(environment, "up", "--detach", "--force-recreate", "api")
-        _wait_for_http(f"{public_url}/settings")
-        print("Atlas restarted with the temporary HTTPS settings origin.")
+        _wait_for_http(f"{public_url}/notifications")
+        print("Atlas restarted with the temporary HTTPS portal origin.")
 
         _telegram_request(
             bot_token,
@@ -394,24 +396,24 @@ def _run_live_smoke() -> None:
             raise LiveSmokeError("Telegram callback acknowledgement was not manually confirmed")
 
         login_request_count = _database_count(environment, "settings_login_requests")
-        print("Send /settings to the bot.")
+        print("Send /notifications to the bot.")
         _wait_until(
             lambda: _database_count(environment, "settings_login_requests") > login_request_count,
-            description="the Telegram settings link",
+            description="the Telegram notification settings link",
             timeout_seconds=wait_seconds,
         )
-        print("Open the settings button and complete Telegram login in the browser.")
-        input("Press Enter after the authenticated settings page is visible... ")
+        print("Open the notifications button and complete Telegram login in the browser.")
+        input("Press Enter after the authenticated notification settings page is visible... ")
         _wait_until(
             lambda: _database_count(environment, "settings_browser_sessions") == 1,
             description="the Telegram-authenticated browser session",
             timeout_seconds=15,
         )
         print(
-            "In the settings page, set timezone to America/Los_Angeles, disable weekend "
-            "notifications, and press Save settings."
+            "In the notification settings page, set timezone to America/Los_Angeles, disable "
+            "weekend notifications, and press Save."
         )
-        input("Press Enter after the settings are saved... ")
+        input("Press Enter after the notification settings are saved... ")
         _wait_until(
             lambda: (
                 int(
@@ -427,7 +429,7 @@ def _run_live_smoke() -> None:
             description="the saved browser preferences",
             timeout_seconds=15,
         )
-        print("Preferences saved. Press Log out on the settings page.")
+        print("Preferences saved. Press Log out on the notification settings page.")
         input("Press Enter after logging out... ")
         _wait_until(
             lambda: (
@@ -444,7 +446,7 @@ def _run_live_smoke() -> None:
             timeout_seconds=15,
         )
 
-        print("Live Telegram messaging and settings smoke test passed.")
+        print("Live Telegram messaging and notification settings smoke test passed.")
     finally:
         if webhook_registered:
             try:
@@ -468,8 +470,8 @@ def _run_live_smoke() -> None:
         print("Temporary tunnel and Atlas test stack removed.")
         if telegram_callback_url is not None:
             print(
-                "Remove this expired Quick Tunnel URL from BotFather's Allowed URLs: "
-                f"{telegram_callback_url}"
+                "Remove this expired Quick Tunnel Trusted Origin and Redirect URI from "
+                f"BotFather: {public_url} and {telegram_callback_url}"
             )
 
 

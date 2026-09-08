@@ -40,6 +40,17 @@ def upgrade() -> None:
             nullable=False,
         ),
     )
+    op.execute(
+        "UPDATE user_preferences SET timezone = 'UTC' "
+        "WHERE timezone NOT IN ('UTC', 'America/Los_Angeles', 'America/Chicago', "
+        "'America/New_York', 'Pacific/Honolulu', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Taipei')"
+    )
+    op.create_check_constraint(
+        "ck_user_preferences_timezone_supported",
+        "user_preferences",
+        "timezone IN ('UTC', 'America/Los_Angeles', 'America/Chicago', 'America/New_York', "
+        "'Pacific/Honolulu', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Taipei')",
+    )
     op.create_table(
         "settings_login_requests",
         sa.Column("user_id", sa.Uuid(), nullable=False),
@@ -131,6 +142,11 @@ def downgrade() -> None:
         table_name="settings_login_requests",
     )
     op.drop_table("settings_login_requests")
+    op.drop_constraint(
+        "ck_user_preferences_timezone_supported",
+        "user_preferences",
+        type_="check",
+    )
     op.drop_column("user_preferences", "notifications_enabled")
     op.alter_column(
         "user_preferences",

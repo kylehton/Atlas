@@ -33,7 +33,10 @@ async def test_bot_client_sends_buttons_and_answers_callbacks() -> None:
             text="Approve this action?",
             buttons=(
                 TelegramButton(text="Approve", callback_data="approve:1"),
-                TelegramButton(text="Open settings", url="https://atlas.example/settings"),
+                TelegramButton(
+                    text="Open notifications",
+                    url="https://atlas.example/notifications",
+                ),
             ),
         )
         await telegram.answer_callback_query(query_id="callback-1", text="Approved")
@@ -47,7 +50,12 @@ async def test_bot_client_sends_buttons_and_answers_callbacks() -> None:
         "reply_markup": {
             "inline_keyboard": [
                 [{"text": "Approve", "callback_data": "approve:1"}],
-                [{"text": "Open settings", "url": "https://atlas.example/settings"}],
+                [
+                    {
+                        "text": "Open notifications",
+                        "url": "https://atlas.example/notifications",
+                    }
+                ],
             ]
         },
     }

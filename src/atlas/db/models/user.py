@@ -1,7 +1,7 @@
 from datetime import time
 from uuid import UUID
 
-from sqlalchemy import Boolean, ForeignKey, String, Time, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String, Time, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from atlas.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -10,6 +10,7 @@ from atlas.shared.field_types import (
     PROVIDER_NAME_MAX_LENGTH,
     SHORT_TEXT_MAX_LENGTH,
 )
+from atlas.shared.timezones import DEFAULT_TIMEZONE
 
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -20,12 +21,20 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 class UserPreference(TimestampMixin, Base):
     __tablename__ = "user_preferences"
+    __table_args__ = (
+        CheckConstraint(
+            "timezone IN ('UTC', 'America/Los_Angeles', 'America/Chicago', "
+            "'America/New_York', 'Pacific/Honolulu', 'Asia/Tokyo', 'Asia/Seoul', "
+            "'Asia/Taipei')",
+            name="ck_user_preferences_timezone_supported",
+        ),
+    )
 
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    timezone: Mapped[str] = mapped_column(String(64), server_default="UTC")
+    timezone: Mapped[str] = mapped_column(String(64), server_default=DEFAULT_TIMEZONE)
     morning_briefing_time: Mapped[time | None] = mapped_column(Time())
     notification_window_start: Mapped[time | None] = mapped_column(Time())
     notification_window_end: Mapped[time | None] = mapped_column(Time())

@@ -12,7 +12,8 @@ from atlas.config.config import Settings, get_settings
 from atlas.config.observability import configure_logging
 from atlas.db.session import create_database_engine, create_session_factory
 from atlas.onboarding import SettingsService
-from atlas.onboarding.routes import router as settings_router
+from atlas.onboarding.auth_routes import router as portal_auth_router
+from atlas.onboarding.routes import router as notification_settings_router
 from atlas.telegram import TelegramBotClient, TelegramCapability, TelegramMessagingService
 from atlas.telegram.browser_auth import TelegramBrowserAuth, TelegramOidcClient
 from atlas.telegram.webhook import TelegramWebhookService
@@ -79,7 +80,8 @@ def create_app(
     application.state.settings_service = settings_service
     add_request_context(application)
     application.include_router(health_router)
-    application.include_router(settings_router)
+    application.include_router(portal_auth_router)
+    application.include_router(notification_settings_router)
     application.include_router(telegram_router)
     return application
 

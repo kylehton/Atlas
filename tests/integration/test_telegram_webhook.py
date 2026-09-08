@@ -107,7 +107,7 @@ async def test_webhook_verifies_secret_preserves_identity_and_deduplicates(
         settings_response = await client.post(
             "/webhooks/telegram",
             headers=headers,
-            json=message_update(settings_update_id, "/settings"),
+            json=message_update(settings_update_id, "/notifications"),
         )
         callback_payload = {
             "update_id": callback_update_id,
@@ -147,7 +147,7 @@ async def test_webhook_verifies_secret_preserves_identity_and_deduplicates(
     assert [message.chat_id for message in telegram.sent_messages] == [chat_id, chat_id, chat_id]
     settings_button = telegram.sent_messages[-1].buttons[0]
     assert settings_button.url is not None
-    assert settings_button.url.startswith("http://localhost:8080/settings#login=")
+    assert settings_button.url.startswith("http://localhost:8080/notifications#login=")
     assert len(telegram.callback_answers) == 1
 
     with session_scope(postgres_session_factory) as session:

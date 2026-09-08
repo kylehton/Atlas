@@ -130,7 +130,7 @@ class TelegramWebhookService:
             chat_id=message.chat.id,
             text=message.text,
         )
-        if incoming.text.strip().lower() in {"/settings", "settings"}:
+        if incoming.text.strip().lower() in {"/notifications", "notifications"}:
             try:
                 login = self._settings_service.issue_login_request_with_repository(
                     repository,
@@ -139,13 +139,13 @@ class TelegramWebhookService:
             except SettingsLoginUnavailable:
                 await self._telegram.send_message(
                     chat_id=incoming.chat_id,
-                    text="Atlas settings login is not configured yet.",
+                    text="Atlas notification settings login is not configured yet.",
                 )
                 return
             await self._telegram.send_message(
                 chat_id=incoming.chat_id,
-                text="Open your private Atlas settings link. It expires shortly.",
-                buttons=(TelegramButton(text="Open settings", url=login.url),),
+                text="Open your private Atlas notification settings link. It expires shortly.",
+                buttons=(TelegramButton(text="Open notifications", url=login.url),),
             )
             return
         await self._telegram.send_message(

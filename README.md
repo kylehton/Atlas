@@ -27,7 +27,7 @@ through natural conversation.
 - GitHub Actions CI for quality checks, migrations, tests, and secret scanning
 - Isolated container build and smoke validation
 - ECR image publishing and EC2 deployment automation
-- Telegram-verified settings portal with expiring login requests and revocable browser sessions
+- Telegram-verified notification settings with expiring login requests and shared portal sessions
 
 ---
 
@@ -131,11 +131,12 @@ the same value for `secret_token`. Atlas checks Telegram's
 `X-Telegram-Bot-Api-Secret-Token` header before parsing an update. Only private text messages and
 inline-button callbacks are currently processed.
 
-For settings-page authentication, add
-`https://atlas.example.com/settings/auth/telegram/callback` as an allowed URL under the bot's
-Login Widget settings in BotFather, then configure the displayed client ID and secret. An existing
-user can send `/settings` to receive an expiring link. The link still requires Telegram's signed
-OIDC login to match the Telegram identity for which Atlas created it.
+For portal authentication, configure the Login Widget in BotFather with `https://atlas.example.com`
+as the trusted origin and `https://atlas.example.com/auth/telegram/callback` as the redirect URI,
+then configure the displayed client ID and secret. An existing user can send `/notifications` to
+receive an expiring link. The link still requires Telegram's signed OIDC login to match the Telegram
+identity for which Atlas created it. The resulting session is shared by current and future portal
+pages.
 
 For an opt-in real Telegram round-trip test, install `cloudflared` and run:
 
@@ -144,11 +145,11 @@ brew install cloudflared
 atlas run test-telegram-live
 ```
 
-The command refuses to replace an existing bot webhook. It creates an isolated local stack and
-Quick Tunnel, prints the temporary settings callback to add in BotFather, and pauses while its Login
-Widget credentials are added to `.env`. It then guides you through messaging, a callback button,
-Telegram-authenticated settings login, preference saving, and logout. Cleanup deletes the temporary
-webhook and test environment; remove the temporary Allowed URL from BotFather when prompted. This
+The command refuses to replace an existing bot webhook. It creates an isolated local stack and Quick
+Tunnel, prints the temporary trusted origin and redirect URI to add in BotFather, and pauses while
+its Login Widget credentials are added to `.env`. It then guides you through messaging, a callback
+button, Telegram-authenticated notification settings, preference saving, and logout. Cleanup deletes
+the temporary webhook and test environment; remove the temporary BotFather URLs when prompted. This
 interactive test is intentionally excluded from normal tests, builds, and CI.
 
 ### Local model

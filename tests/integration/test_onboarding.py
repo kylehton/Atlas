@@ -20,7 +20,7 @@ from atlas.db.models import (
 from atlas.db.repositories import AtlasRepository
 from atlas.db.session import session_scope
 from atlas.onboarding import SettingsService
-from atlas.onboarding.routes import SETTINGS_SESSION_COOKIE
+from atlas.onboarding.auth_routes import PORTAL_SESSION_COOKIE
 from atlas.telegram.browser_auth import VerifiedTelegramIdentity
 
 
@@ -41,7 +41,7 @@ class FakeTelegramBrowserAuth:
         nonce: str,
         code_challenge: str,
     ) -> str:
-        assert redirect_uri == "https://atlas.test/settings/auth/telegram/callback"
+        assert redirect_uri == "https://atlas.test/auth/telegram/callback"
         assert nonce
         assert code_challenge
         return f"https://oauth.telegram.test/auth?state={state}"
@@ -55,7 +55,7 @@ class FakeTelegramBrowserAuth:
         expected_nonce_hash: str,
     ) -> VerifiedTelegramIdentity:
         assert code == "telegram-code"
-        assert redirect_uri == "https://atlas.test/settings/auth/telegram/callback"
+        assert redirect_uri == "https://atlas.test/auth/telegram/callback"
         assert code_verifier
         assert expected_nonce_hash
         return VerifiedTelegramIdentity(provider_user_id=self.provider_user_id)
@@ -90,7 +90,7 @@ async def _start_login(
     request_token: str,
 ) -> str:
     response = await client.post(
-        "/settings/auth/telegram/start",
+        "/auth/telegram/start",
         json={"request_token": request_token},
     )
     assert response.status_code == 200
@@ -120,11 +120,12 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
         app.router.lifespan_context(app),
         httpx.AsyncClient(transport=transport, base_url="https://atlas.test") as client,
     ):
-        page = await client.get("/settings")
+        page = await client.get("/notifications")
         assert page.status_code == 200
-        assert "User Settings" in page.text
-        timezone_options = (await client.get("/settings/timezones")).json()["timezones"]
+        assert "Notification Settings" in page.text
+        timezone_options = (await client.get("/notifications/timezones")).json()["timezones"]
         assert timezone_options == [
+            {"value": "UTC", "label": "Universal Time (UTC+00:00)"},
             {"value": "America/Los_Angeles", "label": "Pacific Time (UTC-08:00)"},
             {"value": "America/Chicago", "label": "Central Time (UTC-06:00)"},
             {"value": "America/New_York", "label": "Eastern Time (UTC-05:00)"},
@@ -137,24 +138,27 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
 
         state = await _start_login(client, request_token)
         callback = await client.get(
-            "/settings/auth/telegram/callback",
+            "/auth/telegram/callback",
             params={"code": "telegram-code", "state": state},
         )
         assert callback.status_code == 303
+        assert callback.headers["location"] == "/notifications"
         cookie_header = callback.headers["set-cookie"]
         assert all(
             attribute in cookie_header
-            for attribute in ("HttpOnly", "Secure", "SameSite=strict", "Path=/settings")
+            for attribute in ("HttpOnly", "Secure", "SameSite=strict", "Path=/")
         )
-        session_token = client.cookies.get(SETTINGS_SESSION_COOKIE)
+        session_token = client.cookies.get(PORTAL_SESSION_COOKIE)
         assert session_token is not None
-        assert (await client.get("/settings/profile")).json() == {
+        assert (await client.get("/auth/profile")).json() == {
             "display_name": "Settings user",
             "telegram_username": "settings_user",
         }
+        initial_preferences = (await client.get("/notifications/preferences")).json()
+        assert initial_preferences["timezone"] == "UTC"
 
         update = await client.put(
-            "/settings/preferences",
+            "/notifications/preferences",
             json={
                 "timezone": "America/Los_Angeles",
                 "notification_window_start": "09:00:00",
@@ -171,11 +175,11 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
             "notifications_enabled": True,
             "notifications_on_weekends": False,
         }
-        assert (await client.get("/settings/preferences")).json() == update.json()
+        assert (await client.get("/notifications/preferences")).json() == update.json()
 
-        assert (await client.delete("/settings/session")).status_code == 204
-        assert (await client.get("/settings/preferences")).status_code == 401
-        assert (await client.get("/settings/profile")).status_code == 401
+        assert (await client.delete("/auth/session")).status_code == 204
+        assert (await client.get("/notifications/preferences")).status_code == 401
+        assert (await client.get("/auth/profile")).status_code == 401
 
     with session_scope(postgres_session_factory) as database_session:
         stored_request = database_session.scalar(
@@ -224,12 +228,12 @@ async def test_leaked_link_cannot_open_settings_for_a_different_telegram_user(
     ):
         state = await _start_login(client, request_token)
         callback = await client.get(
-            "/settings/auth/telegram/callback",
+            "/auth/telegram/callback",
             params={"code": "telegram-code", "state": state},
         )
 
     assert callback.status_code == 403
-    assert SETTINGS_SESSION_COOKIE not in client.cookies
+    assert PORTAL_SESSION_COOKIE not in client.cookies
     with session_scope(postgres_session_factory) as database_session:
         session_count = database_session.scalar(
             select(func.count())
@@ -276,19 +280,19 @@ async def test_settings_rejects_invalid_expired_and_restarted_login_requests(
         httpx.AsyncClient(transport=transport, base_url="https://atlas.test") as client,
     ):
         invalid = await client.post(
-            "/settings/auth/telegram/start",
+            "/auth/telegram/start",
             json={"request_token": "x" * 43},
         )
         expired = await client.post(
-            "/settings/auth/telegram/start",
+            "/auth/telegram/start",
             json={"request_token": expired_token},
         )
         first_start = await client.post(
-            "/settings/auth/telegram/start",
+            "/auth/telegram/start",
             json={"request_token": valid_token},
         )
         restarted = await client.post(
-            "/settings/auth/telegram/start",
+            "/auth/telegram/start",
             json={"request_token": valid_token},
         )
 

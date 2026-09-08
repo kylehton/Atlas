@@ -1,7 +1,7 @@
 const accessMessage = document.querySelector("#access-message");
 const accessStatus = document.querySelector("#access-status");
-const settingsContent = document.querySelector("#settings-content");
-const settingsStatus = document.querySelector("#settings-status");
+const notificationSettingsContent = document.querySelector("#settings-content");
+const notificationSettingsStatus = document.querySelector("#settings-status");
 const form = document.querySelector("#preferences");
 const submitButton = document.querySelector("#submit-button");
 const submitLabel = document.querySelector("#submit-label");
@@ -15,19 +15,19 @@ const notificationWindowDuration = document.querySelector("#notification-window-
 
 function showAccessMessage(message) {
   document.body.classList.add("access-only");
-  settingsContent.hidden = true;
+  notificationSettingsContent.hidden = true;
   accessStatus.textContent = message;
   accessMessage.hidden = false;
 }
 
 function showSettingsStatus(message) {
-  settingsStatus.textContent = message;
+  notificationSettingsStatus.textContent = message;
 }
 
 function showSettings() {
   document.body.classList.remove("access-only");
   accessMessage.hidden = true;
-  settingsContent.hidden = false;
+  notificationSettingsContent.hidden = false;
 }
 
 function timeForInput(value) {
@@ -64,7 +64,7 @@ function setSaving(saving) {
 }
 
 async function loadTimezoneOptions(selectedTimezone) {
-  const response = await fetch("/settings/timezones");
+  const response = await fetch("/notifications/timezones");
   if (!response.ok) {
     throw new Error("timezone options unavailable");
   }
@@ -89,15 +89,15 @@ function showProfile(profile) {
 }
 
 async function startLogin(requestToken) {
-  history.replaceState(null, "", "/settings");
-  showAccessMessage("Verifying your settings link…");
-  const response = await fetch("/settings/auth/telegram/start", {
+  history.replaceState(null, "", "/notifications");
+  showAccessMessage("Verifying your notification settings link…");
+  const response = await fetch("/auth/telegram/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ request_token: requestToken }),
   });
   if (!response.ok) {
-    showAccessMessage("This settings link is invalid, expired, or already used.");
+    showAccessMessage("This notification settings link is invalid, expired, or already used.");
     return;
   }
   const payload = await response.json();
@@ -105,19 +105,19 @@ async function startLogin(requestToken) {
 }
 
 async function loadPreferences() {
-  const response = await fetch("/settings/preferences");
+  const response = await fetch("/notifications/preferences");
   if (!response.ok) {
-    showAccessMessage("Request a new settings link from Atlas in Telegram.");
+    showAccessMessage("Request a new notification settings link from Atlas in Telegram.");
     return;
   }
 
   const preferences = await response.json();
   const [profileResponse] = await Promise.all([
-    fetch("/settings/profile"),
+    fetch("/auth/profile"),
     loadTimezoneOptions(preferences.timezone),
   ]);
   if (!profileResponse.ok) {
-    showAccessMessage("Your settings session expired. Request a new link from Atlas.");
+    showAccessMessage("Your portal session expired. Request a new link from Atlas.");
     return;
   }
   showProfile(await profileResponse.json());
@@ -145,9 +145,9 @@ form.addEventListener("submit", async (event) => {
   }
 
   setSaving(true);
-  showSettingsStatus("Saving your settings…");
+  showSettingsStatus("Saving your notification settings…");
   try {
-    const response = await fetch("/settings/preferences", {
+    const response = await fetch("/notifications/preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -159,11 +159,11 @@ form.addEventListener("submit", async (event) => {
       }),
     });
     if (response.status === 401) {
-      showAccessMessage("Your settings session expired. Request a new link from Atlas.");
+      showAccessMessage("Your portal session expired. Request a new link from Atlas.");
       return;
     }
     if (!response.ok) {
-      showSettingsStatus("Atlas could not save those settings.");
+      showSettingsStatus("Atlas could not save those notification settings.");
       return;
     }
     submitLabel.textContent = "Settings saved";
@@ -179,8 +179,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 document.querySelector("#logout").addEventListener("click", async () => {
-  await fetch("/settings/session", { method: "DELETE" });
-  showAccessMessage("Logged out. Request a new settings link from Atlas when needed.");
+  await fetch("/auth/session", { method: "DELETE" });
+  showAccessMessage("Logged out. Request a new notification settings link when needed.");
 });
 
 const requestToken = new URLSearchParams(window.location.hash.slice(1)).get("login");
@@ -190,6 +190,6 @@ if (requestToken) {
   );
 } else {
   loadPreferences().catch(() =>
-    showAccessMessage("Atlas settings are temporarily unavailable."),
+    showAccessMessage("Atlas notification settings are temporarily unavailable."),
   );
 }

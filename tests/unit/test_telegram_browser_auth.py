@@ -72,7 +72,7 @@ async def test_oidc_client_validates_telegram_identity(
             client=http_client,
         )
         authorization_url = telegram.authorization_url(
-            redirect_uri="https://atlas.test/settings/auth/telegram/callback",
+            redirect_uri="https://atlas.test/auth/telegram/callback",
             state="test-state",
             nonce=nonce,
             code_challenge="test-challenge",
@@ -84,7 +84,7 @@ async def test_oidc_client_validates_telegram_identity(
 
         authentication = telegram.authenticate(
             code="test-code",
-            redirect_uri="https://atlas.test/settings/auth/telegram/callback",
+            redirect_uri="https://atlas.test/auth/telegram/callback",
             code_verifier="test-verifier",
             expected_nonce_hash=hashlib.sha256(nonce.encode("utf-8")).hexdigest(),
         )
