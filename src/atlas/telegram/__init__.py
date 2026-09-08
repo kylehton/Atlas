@@ -1,5 +1,11 @@
 """Telegram transport integration."""
 
+from atlas.telegram.browser_auth import (
+    TelegramAuthenticationError,
+    TelegramBrowserAuth,
+    TelegramOidcClient,
+    VerifiedTelegramIdentity,
+)
 from atlas.telegram.client import TelegramAPIError, TelegramBotClient
 from atlas.telegram.contracts import (
     TELEGRAM_PROVIDER,
@@ -21,11 +27,15 @@ __all__ = [
     "SentTelegramMessage",
     "TELEGRAM_PROVIDER",
     "TelegramAPIError",
+    "TelegramAuthenticationError",
     "TelegramBotClient",
+    "TelegramBrowserAuth",
     "TelegramButton",
     "TelegramCallbackAnswer",
     "TelegramCallbackData",
     "TelegramCapability",
     "TelegramIdentityNotFound",
     "TelegramMessagingService",
+    "TelegramOidcClient",
+    "VerifiedTelegramIdentity",
 ]

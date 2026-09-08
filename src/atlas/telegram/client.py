@@ -36,10 +36,7 @@ class TelegramBotClient:
         payload: dict[str, object] = {"chat_id": chat_id, "text": text}
         if buttons:
             payload["reply_markup"] = {
-                "inline_keyboard": [
-                    [{"text": button.text, "callback_data": button.callback_data}]
-                    for button in buttons
-                ]
+                "inline_keyboard": [[self._button_payload(button)] for button in buttons]
             }
 
         result = await self._post("sendMessage", payload)
@@ -71,6 +68,13 @@ class TelegramBotClient:
     async def aclose(self) -> None:
         if self._owns_client:
             await self._client.aclose()
+
+    @staticmethod
+    def _button_payload(button: TelegramButton) -> dict[str, str]:
+        if button.callback_data is not None:
+            return {"text": button.text, "callback_data": button.callback_data}
+        assert button.url is not None
+        return {"text": button.text, "url": button.url}
 
     async def _post(self, method: str, payload: dict[str, object]) -> dict[str, Any]:
         """Call one Bot API method without leaking the bot token through raised errors."""

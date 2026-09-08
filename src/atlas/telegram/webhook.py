@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from atlas.db.repositories import AtlasRepository
 from atlas.db.session import session_scope
+from atlas.onboarding import SettingsLoginUnavailable, SettingsService
 from atlas.shared.field_types import LONG_TEXT_MAX_LENGTH
 from atlas.telegram.contracts import (
     TELEGRAM_PROVIDER,
     IncomingTelegramCallback,
     IncomingTelegramMessage,
+    TelegramButton,
     TelegramCallbackData,
     TelegramCapability,
 )
@@ -73,9 +75,11 @@ class TelegramWebhookService:
         self,
         session_factory: sessionmaker[Session],
         telegram: TelegramCapability,
+        settings_service: SettingsService,
     ) -> None:
         self._session_factory = session_factory
         self._telegram = telegram
+        self._settings_service = settings_service
 
     async def process(
         self,
@@ -125,6 +129,24 @@ class TelegramWebhookService:
             chat_id=message.chat.id,
             text=message.text,
         )
+        if incoming.text.strip().lower() in {"/settings", "settings"}:
+            try:
+                login = self._settings_service.issue_login_request_with_repository(
+                    repository,
+                    incoming.user_id,
+                )
+            except SettingsLoginUnavailable:
+                await self._telegram.send_message(
+                    chat_id=incoming.chat_id,
+                    text="Atlas settings login is not configured yet.",
+                )
+                return
+            await self._telegram.send_message(
+                chat_id=incoming.chat_id,
+                text="Open your private Atlas settings link. It expires shortly.",
+                buttons=(TelegramButton(text="Open settings", url=login.url),),
+            )
+            return
         await self._telegram.send_message(
             chat_id=incoming.chat_id,
             text="Atlas is connected and received your message.",

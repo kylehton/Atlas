@@ -27,7 +27,12 @@ type TelegramCallbackData = Annotated[
 @dataclass(frozen=True, slots=True)
 class TelegramButton:
     text: ShortText
-    callback_data: TelegramCallbackData
+    callback_data: TelegramCallbackData | None = None
+    url: LongText | None = None
+
+    def __post_init__(self) -> None:
+        if (self.callback_data is None) == (self.url is None):
+            raise ValueError("Telegram buttons require exactly one callback_data or url value")
 
 
 @dataclass(frozen=True, slots=True)

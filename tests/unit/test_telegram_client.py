@@ -31,7 +31,10 @@ async def test_bot_client_sends_buttons_and_answers_callbacks() -> None:
         sent = await telegram.send_message(
             chat_id=1001,
             text="Approve this action?",
-            buttons=(TelegramButton(text="Approve", callback_data="approve:1"),),
+            buttons=(
+                TelegramButton(text="Approve", callback_data="approve:1"),
+                TelegramButton(text="Open settings", url="https://atlas.example/settings"),
+            ),
         )
         await telegram.answer_callback_query(query_id="callback-1", text="Approved")
 
@@ -41,6 +44,11 @@ async def test_bot_client_sends_buttons_and_answers_callbacks() -> None:
     assert sent_payload == {
         "chat_id": 1001,
         "text": "Approve this action?",
-        "reply_markup": {"inline_keyboard": [[{"text": "Approve", "callback_data": "approve:1"}]]},
+        "reply_markup": {
+            "inline_keyboard": [
+                [{"text": "Approve", "callback_data": "approve:1"}],
+                [{"text": "Open settings", "url": "https://atlas.example/settings"}],
+            ]
+        },
     }
     assert callback_payload == {"callback_query_id": "callback-1", "text": "Approved"}

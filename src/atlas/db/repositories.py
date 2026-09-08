@@ -9,6 +9,8 @@ from atlas.db.models import (
     ExternalIdentity,
     Integration,
     ProcessedTelegramUpdate,
+    SettingsBrowserSession,
+    SettingsLoginRequest,
     User,
     UserPreference,
     Workflow,
@@ -33,6 +35,37 @@ class AtlasRepository:
 
     def get_preferences(self, user_id: UUID) -> UserPreference | None:
         return self._session.get(UserPreference, user_id)
+
+    def get_settings_login_request_for_update(
+        self,
+        request_hash: str,
+    ) -> SettingsLoginRequest | None:
+        """Lock a settings-link request while its Telegram login is started."""
+
+        return self._session.scalar(
+            select(SettingsLoginRequest)
+            .where(SettingsLoginRequest.request_hash == request_hash)
+            .with_for_update()
+        )
+
+    def get_settings_login_by_state_for_update(
+        self,
+        state_hash: str,
+    ) -> SettingsLoginRequest | None:
+        """Lock the matching OIDC attempt while its callback is completed."""
+
+        return self._session.scalar(
+            select(SettingsLoginRequest)
+            .where(SettingsLoginRequest.oidc_state_hash == state_hash)
+            .with_for_update()
+        )
+
+    def get_settings_session(self, session_hash: str) -> SettingsBrowserSession | None:
+        return self._session.scalar(
+            select(SettingsBrowserSession).where(
+                SettingsBrowserSession.session_hash == session_hash
+            )
+        )
 
     def claim_telegram_update(self, update_id: int) -> bool:
         """Claim an update ID atomically, returning false when Telegram already delivered it."""

@@ -8,6 +8,8 @@ PROVIDER_NAME_MAX_LENGTH: Final = 32
 CAPABILITY_NAME_MAX_LENGTH: Final = 32
 SHORT_TEXT_MAX_LENGTH: Final = 256
 LONG_TEXT_MAX_LENGTH: Final = 2_000
+TIMEZONE_NAME_MAX_LENGTH: Final = 64
+SHA256_HEX_LENGTH: Final = 64
 
 # Atlas-owned records use native UUID values rather than loosely validated ID strings.
 type AtlasId = UUID
@@ -31,3 +33,7 @@ type CapabilityName = Annotated[
 # Shared text sizes keep capability models bounded before data reaches a provider or database.
 type ShortText = Annotated[str, StringConstraints(max_length=SHORT_TEXT_MAX_LENGTH)]
 type LongText = Annotated[str, StringConstraints(max_length=LONG_TEXT_MAX_LENGTH)]
+type TimezoneName = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=TIMEZONE_NAME_MAX_LENGTH),
+]

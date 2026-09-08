@@ -5,6 +5,7 @@ x-atlas-service: &atlas-service
       required: false
   environment:
     ATLAS_MODEL_BASE_URL: http://model:8080
+    ATLAS_PUBLIC_BASE_URL: ${ATLAS_PUBLIC_BASE_URL:?ATLAS_PUBLIC_BASE_URL must be set}
   restart: unless-stopped
 
 services:

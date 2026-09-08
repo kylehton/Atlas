@@ -9,6 +9,7 @@ x-atlas-service: &atlas-service
   environment:
     ATLAS_DATABASE_URL: postgresql+psycopg://atlas:${ATLAS_POSTGRES_PASSWORD:-atlas}@postgres:5432/atlas
     ATLAS_MODEL_BASE_URL: http://model:8080
+    ATLAS_PUBLIC_BASE_URL: ${ATLAS_PUBLIC_BASE_URL:-http://localhost:8080}
   depends_on:
     postgres:
       condition: service_healthy

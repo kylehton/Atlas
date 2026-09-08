@@ -19,3 +19,12 @@ def test_blank_optional_secrets_are_not_stored() -> None:
 def test_telegram_webhook_secret_rejects_unsupported_characters() -> None:
     with pytest.raises(ValidationError, match="unsupported characters"):
         Settings(telegram_webhook_secret="not allowed")
+
+
+def test_telegram_browser_login_requires_complete_credentials() -> None:
+    with pytest.raises(ValidationError, match="must be set together"):
+        Settings(
+            _env_file=None,
+            telegram_login_client_id="client-id",
+            telegram_login_client_secret=None,
+        )

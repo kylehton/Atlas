@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atlas settings</title>
+    <link rel="stylesheet" href="/settings/assets/settings.css">
+    <script src="/settings/assets/settings.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <section id="access-message">
+        <p id="access-status" role="status">Checking your session…</p>
+      </section>
+
+      <section id="settings-content" hidden>
+        <header>
+          <p class="eyebrow">ATLAS</p>
+          <h1>Settings</h1>
+          <p class="subtitle">Manage when and how Atlas contacts you.</p>
+        </header>
+
+        <p id="settings-status" role="status">Signed in through Telegram.</p>
+
+        <form id="preferences">
+          <label>
+            Timezone
+            <input id="timezone" name="timezone" autocomplete="off" required>
+          </label>
+
+          <div class="row">
+            <label>
+              Quiet hours start
+              <input id="quiet-hours-start" name="quiet_hours_start" type="time">
+            </label>
+            <label>
+              Quiet hours end
+              <input id="quiet-hours-end" name="quiet_hours_end" type="time">
+            </label>
+          </div>
+
+          <label class="check">
+            <input id="notifications-enabled" name="notifications_enabled" type="checkbox">
+            Enable notifications
+          </label>
+          <label class="check">
+            <input
+              id="notifications-on-weekends"
+              name="notifications_on_weekends"
+              type="checkbox"
+            >
+            Allow notifications on weekends
+          </label>
+
+          <div class="actions">
+            <button type="submit">Save settings</button>
+            <button id="logout" class="secondary" type="button">Log out</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

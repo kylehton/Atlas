@@ -196,7 +196,12 @@ def _database_scalar(environment: dict[str, str], sql: str) -> str:
 
 
 def _database_count(environment: dict[str, str], table: str) -> int:
-    allowed_tables = {"external_identities", "telegram_processed_update_ids"}
+    allowed_tables = {
+        "external_identities",
+        "settings_browser_sessions",
+        "settings_login_requests",
+        "telegram_processed_update_ids",
+    }
     if table not in allowed_tables:
         raise ValueError(f"unsupported smoke-test table: {table}")
     return int(_database_scalar(environment, f"SELECT count(*) FROM {table};"))
@@ -272,10 +277,13 @@ def _run_live_smoke() -> None:
     environment = os.environ.copy()
     environment["ATLAS_APP_IMAGE"] = "atlas:telegram-live-test"
     environment["ATLAS_HTTP_PORT"] = str(_available_port())
+    local_url = f"http://127.0.0.1:{environment['ATLAS_HTTP_PORT']}"
+    environment["ATLAS_PUBLIC_BASE_URL"] = local_url
     environment["COMPOSE_PROGRESS"] = "plain"
     wait_seconds = int(environment.get("ATLAS_TELEGRAM_TEST_TIMEOUT", DEFAULT_USER_WAIT_SECONDS))
     tunnel: subprocess.Popen[str] | None = None
     webhook_registered = False
+    telegram_callback_url: str | None = None
 
     _run_compose(
         environment,
@@ -293,9 +301,31 @@ def _run_live_smoke() -> None:
         _run_compose(environment, "run", "--rm", "api", "alembic", "check")
         _run_compose(environment, "up", "--detach", "api", "caddy")
 
-        local_url = f"http://127.0.0.1:{environment['ATLAS_HTTP_PORT']}"
         _wait_for_http(f"{local_url}/health/ready")
         tunnel, public_url = _start_reachable_quick_tunnel(local_url)
+        telegram_callback_url = f"{public_url}/settings/auth/telegram/callback"
+
+        print("\nTelegram browser login requires this temporary callback URL:")
+        print(telegram_callback_url)
+        print(
+            "In BotFather, open this bot's Login Widget settings, add that exact Allowed URL, "
+            "and copy its Client ID and Client Secret into .env as "
+            "ATLAS_TELEGRAM_LOGIN_CLIENT_ID and ATLAS_TELEGRAM_LOGIN_CLIENT_SECRET."
+        )
+        input("Press Enter after the BotFather URL and .env credentials are configured... ")
+        browser_login_settings = Settings()
+        if (
+            browser_login_settings.telegram_login_client_id is None
+            or browser_login_settings.telegram_login_client_secret is None
+        ):
+            raise LiveSmokeError(
+                "Telegram Login Widget client ID and secret are still missing from .env"
+            )
+
+        environment["ATLAS_PUBLIC_BASE_URL"] = public_url
+        _run_compose(environment, "up", "--detach", "--force-recreate", "api")
+        _wait_for_http(f"{public_url}/settings")
+        print("Atlas restarted with the temporary HTTPS settings origin.")
 
         _telegram_request(
             bot_token,
@@ -363,7 +393,58 @@ def _run_live_smoke() -> None:
         if confirmed.strip().lower() not in {"y", "yes"}:
             raise LiveSmokeError("Telegram callback acknowledgement was not manually confirmed")
 
-        print("Live Telegram smoke test passed.")
+        login_request_count = _database_count(environment, "settings_login_requests")
+        print("Send /settings to the bot.")
+        _wait_until(
+            lambda: _database_count(environment, "settings_login_requests") > login_request_count,
+            description="the Telegram settings link",
+            timeout_seconds=wait_seconds,
+        )
+        print("Open the settings button and complete Telegram login in the browser.")
+        input("Press Enter after the authenticated settings page is visible... ")
+        _wait_until(
+            lambda: _database_count(environment, "settings_browser_sessions") == 1,
+            description="the Telegram-authenticated browser session",
+            timeout_seconds=15,
+        )
+        print(
+            "In the settings page, set timezone to America/Los_Angeles, disable weekend "
+            "notifications, and press Save settings."
+        )
+        input("Press Enter after the settings are saved... ")
+        _wait_until(
+            lambda: (
+                int(
+                    _database_scalar(
+                        environment,
+                        "SELECT count(*) FROM user_preferences "
+                        "WHERE timezone = 'America/Los_Angeles' "
+                        "AND notifications_on_weekends = false;",
+                    )
+                )
+                == 1
+            ),
+            description="the saved browser preferences",
+            timeout_seconds=15,
+        )
+        print("Preferences saved. Press Log out on the settings page.")
+        input("Press Enter after logging out... ")
+        _wait_until(
+            lambda: (
+                int(
+                    _database_scalar(
+                        environment,
+                        "SELECT count(*) FROM settings_browser_sessions "
+                        "WHERE revoked_at IS NOT NULL;",
+                    )
+                )
+                == 1
+            ),
+            description="the revoked browser session",
+            timeout_seconds=15,
+        )
+
+        print("Live Telegram messaging and settings smoke test passed.")
     finally:
         if webhook_registered:
             try:
@@ -385,6 +466,11 @@ def _run_live_smoke() -> None:
             capture_output=True,
         )
         print("Temporary tunnel and Atlas test stack removed.")
+        if telegram_callback_url is not None:
+            print(
+                "Remove this expired Quick Tunnel URL from BotFather's Allowed URLs: "
+                f"{telegram_callback_url}"
+            )
 
 
 def main() -> None:

@@ -27,6 +27,7 @@ through natural conversation.
 - GitHub Actions CI for quality checks, migrations, tests, and secret scanning
 - Isolated container build and smoke validation
 - ECR image publishing and EC2 deployment automation
+- Telegram-verified settings portal with expiring login requests and revocable browser sessions
 
 ---
 
@@ -120,12 +121,21 @@ Set the bot token issued by BotFather and a private webhook secret:
 ```dotenv
 ATLAS_TELEGRAM_BOT_TOKEN=<bot-token>
 ATLAS_TELEGRAM_WEBHOOK_SECRET=<random-letters-numbers-underscores-or-hyphens>
+ATLAS_PUBLIC_BASE_URL=https://atlas.example.com
+ATLAS_TELEGRAM_LOGIN_CLIENT_ID=<botfather-login-client-id>
+ATLAS_TELEGRAM_LOGIN_CLIENT_SECRET=<botfather-login-client-secret>
 ```
 
 Register the public HTTPS endpoint `/webhooks/telegram` with Telegram's `setWebhook` method and use
 the same value for `secret_token`. Atlas checks Telegram's
 `X-Telegram-Bot-Api-Secret-Token` header before parsing an update. Only private text messages and
 inline-button callbacks are currently processed.
+
+For settings-page authentication, add
+`https://atlas.example.com/settings/auth/telegram/callback` as an allowed URL under the bot's
+Login Widget settings in BotFather, then configure the displayed client ID and secret. An existing
+user can send `/settings` to receive an expiring link. The link still requires Telegram's signed
+OIDC login to match the Telegram identity for which Atlas created it.
 
 For an opt-in real Telegram round-trip test, install `cloudflared` and run:
 
@@ -135,8 +145,11 @@ atlas run test-telegram-live
 ```
 
 The command refuses to replace an existing bot webhook. It creates an isolated local stack and
-Quick Tunnel, guides you through two messages and one button click, then deletes the temporary
-webhook and test environment. It is intentionally excluded from normal tests, builds, and CI.
+Quick Tunnel, prints the temporary settings callback to add in BotFather, and pauses while its Login
+Widget credentials are added to `.env`. It then guides you through messaging, a callback button,
+Telegram-authenticated settings login, preference saving, and logout. Cleanup deletes the temporary
+webhook and test environment; remove the temporary Allowed URL from BotFather when prompted. This
+interactive test is intentionally excluded from normal tests, builds, and CI.
 
 ### Local model
 

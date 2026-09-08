@@ -29,6 +29,10 @@ class UserPreference(TimestampMixin, Base):
     morning_briefing_time: Mapped[time | None] = mapped_column(Time())
     quiet_hours_start: Mapped[time | None] = mapped_column(Time())
     quiet_hours_end: Mapped[time | None] = mapped_column(Time())
+    notifications_enabled: Mapped[bool] = mapped_column(
+        Boolean(),
+        server_default=text("true"),
+    )
     notifications_on_weekends: Mapped[bool] = mapped_column(
         Boolean(),
         server_default=text("true"),
