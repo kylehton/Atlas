@@ -21,8 +21,8 @@ from atlas.telegram.contracts import (
 )
 
 TELEGRAM_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
-_ACCESS_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-_ACCESS_CALLBACK_PREFIX = "access"
+_CHECK_ACCESS_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+_CHECK_ACCESS_CALLBACK_PREFIX = "access"
 
 type AccessDecision = Literal["approve", "deny"]
 
@@ -278,12 +278,12 @@ class TelegramWebhookService:
             buttons=(
                 TelegramButton(
                     text="Approve",
-                    callback_data=f"{_ACCESS_CALLBACK_PREFIX}:approve:"
+                    callback_data=f"{_CHECK_ACCESS_CALLBACK_PREFIX}:approve:"
                     f"{access_request.reference_code}",
                 ),
                 TelegramButton(
                     text="Deny",
-                    callback_data=f"{_ACCESS_CALLBACK_PREFIX}:deny:{access_request.reference_code}",
+                    callback_data=f"{_CHECK_ACCESS_CALLBACK_PREFIX}:deny:{access_request.reference_code}",
                 ),
             ),
         )
@@ -399,7 +399,7 @@ router = APIRouter()
 
 def _new_access_reference_code() -> str:
     return "".join(
-        secrets.choice(_ACCESS_CODE_ALPHABET) for _ in range(ACCESS_REFERENCE_CODE_LENGTH)
+        secrets.choice(_CHECK_ACCESS_CODE_ALPHABET) for _ in range(ACCESS_REFERENCE_CODE_LENGTH)
     )
 
 
@@ -407,10 +407,10 @@ def _parse_access_decision(value: str) -> tuple[AccessDecision, str] | None:
     parts = value.split(":")
     if (
         len(parts) != 3
-        or parts[0] != _ACCESS_CALLBACK_PREFIX
+        or parts[0] != _CHECK_ACCESS_CALLBACK_PREFIX
         or parts[1] not in {"approve", "deny"}
         or len(parts[2]) != ACCESS_REFERENCE_CODE_LENGTH
-        or any(character not in _ACCESS_CODE_ALPHABET for character in parts[2])
+        or any(character not in _CHECK_ACCESS_CODE_ALPHABET for character in parts[2])
     ):
         return None
     decision: AccessDecision = "approve" if parts[1] == "approve" else "deny"

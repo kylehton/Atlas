@@ -23,6 +23,7 @@ SENSITIVE_KEY_PARTS = (
 _correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 _bearer_pattern = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+")
 _credential_url_pattern = re.compile(r"(://[^:/\s]+:)([^@\s]+)(@)")
+_telegram_bot_url_pattern = re.compile(r"(?i)(https?://api\.telegram\.org/bot)[^/\s\"']+")
 _secret_pattern = re.compile(
     r"(?i)\b(authorization|password|token|secret|api[_-]?key|cookie)"
     r"(\s*[=:]\s*)([^,\s}]+)"
@@ -56,6 +57,7 @@ def redact(value: Any, *, key: str | None = None) -> Any:
     if isinstance(value, str):
         value = _bearer_pattern.sub(f"Bearer {REDACTED}", value)
         value = _credential_url_pattern.sub(rf"\1{REDACTED}\3", value)
+        value = _telegram_bot_url_pattern.sub(rf"\1{REDACTED}", value)
         return _secret_pattern.sub(rf"\1\2{REDACTED}", value)
     if value is None or isinstance(value, (bool, int, float)):
         return value
@@ -89,3 +91,6 @@ def configure_logging(level: str) -> None:
     root_logger = logging.getLogger()
     root_logger.handlers = [handler]
     root_logger.setLevel(level)
+    # HTTPX request logs include full URLs, which can contain provider credentials.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
