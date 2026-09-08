@@ -28,6 +28,7 @@ through natural conversation.
 - Isolated container build and smoke validation
 - ECR image publishing and EC2 deployment automation
 - Telegram-verified notification settings with expiring login requests and shared portal sessions
+- Admin-approved Telegram access requests with idempotent Approve/Deny actions
 
 ---
 
@@ -121,6 +122,7 @@ Set the bot token issued by BotFather and a private webhook secret:
 ```dotenv
 ATLAS_TELEGRAM_BOT_TOKEN=<bot-token>
 ATLAS_TELEGRAM_WEBHOOK_SECRET=<random-letters-numbers-underscores-or-hyphens>
+ATLAS_TELEGRAM_ADMIN_USER_ID=<your-numeric-telegram-user-id>
 ATLAS_PUBLIC_BASE_URL=https://atlas.example.com
 ATLAS_TELEGRAM_LOGIN_CLIENT_ID=<botfather-login-client-id>
 ATLAS_TELEGRAM_LOGIN_CLIENT_SECRET=<botfather-login-client-secret>
@@ -130,6 +132,17 @@ Register the public HTTPS endpoint `/webhooks/telegram` with Telegram's `setWebh
 the same value for `secret_token`. Atlas checks Telegram's
 `X-Telegram-Bot-Api-Secret-Token` header before parsing an update. Only private text messages and
 inline-button callbacks are currently processed.
+
+Unknown Telegram users receive a stable eight-character access code instead of an Atlas account.
+Atlas sends the configured admin an Approve/Deny message, and only callbacks from
+`ATLAS_TELEGRAM_ADMIN_USER_ID` can decide the request. The admin must start a private conversation
+with the bot before Atlas can send these notices.
+
+To retrieve your numeric ID directly from your own bot while no webhook is active, run:
+
+```bash
+atlas run telegram-id
+```
 
 For portal authentication, configure the Login Widget in BotFather with `https://atlas.example.com`
 as the trusted origin and `https://atlas.example.com/auth/telegram/callback` as the redirect URI,
@@ -214,6 +227,7 @@ After activating `.venv`, the following shortcuts are available:
 | `atlas run format` | Apply Python and Markdown lint fixes and formatting. |
 | `atlas run start` | Build, migrate, and start the local Atlas stack without inference. |
 | `atlas run stop` | Stop the local Atlas stack while preserving database data. |
+| `atlas run telegram-id` | Read your numeric Telegram user ID from a private message to your bot. |
 | `atlas run typecheck` | Run only the Python type checker. |
 | `atlas run test` | Run unit, integration, and E2E suites in that order. |
 | `atlas run test-unit` | Run only focused unit tests. |

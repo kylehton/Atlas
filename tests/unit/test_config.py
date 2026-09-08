@@ -10,9 +10,14 @@ def test_production_rejects_local_database() -> None:
 
 
 def test_blank_optional_secrets_are_not_stored() -> None:
-    settings = Settings(telegram_bot_token="", google_client_secret="  ")
+    settings = Settings(
+        telegram_bot_token="",
+        telegram_admin_user_id="",  # type: ignore[arg-type]
+        google_client_secret="  ",
+    )
 
     assert settings.telegram_bot_token is None
+    assert settings.telegram_admin_user_id is None
     assert settings.google_client_secret is None
 
 

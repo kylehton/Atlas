@@ -11,6 +11,7 @@ from atlas.db.models import (
     ProcessedTelegramUpdate,
     SettingsBrowserSession,
     SettingsLoginRequest,
+    TelegramAccessRequest,
     User,
     UserPreference,
     Workflow,
@@ -66,6 +67,64 @@ class AtlasRepository:
                 SettingsBrowserSession.session_hash == session_hash
             )
         )
+
+    def get_telegram_access_request(
+        self,
+        telegram_user_id: int,
+    ) -> TelegramAccessRequest | None:
+        return self._session.scalar(
+            select(TelegramAccessRequest).where(
+                TelegramAccessRequest.telegram_user_id == telegram_user_id
+            )
+        )
+
+    def get_telegram_access_request_by_code_for_update(
+        self,
+        reference_code: str,
+    ) -> TelegramAccessRequest | None:
+        """Lock an access request while an admin decision is applied."""
+
+        return self._session.scalar(
+            select(TelegramAccessRequest)
+            .where(TelegramAccessRequest.reference_code == reference_code)
+            .with_for_update()
+        )
+
+    def get_or_create_telegram_access_request(
+        self,
+        *,
+        telegram_user_id: int,
+        telegram_chat_id: int,
+        telegram_username: str | None,
+        display_name: str,
+        reference_code: str,
+    ) -> tuple[TelegramAccessRequest, bool]:
+        """Create one stable request per Telegram user, tolerating concurrent first messages."""
+
+        existing = self.get_telegram_access_request(telegram_user_id)
+        if existing is not None:
+            existing.telegram_chat_id = telegram_chat_id
+            existing.telegram_username = telegram_username
+            existing.display_name = display_name
+            return existing, False
+
+        try:
+            with self._session.begin_nested():
+                access_request = TelegramAccessRequest(
+                    telegram_user_id=telegram_user_id,
+                    telegram_chat_id=telegram_chat_id,
+                    telegram_username=telegram_username,
+                    display_name=display_name,
+                    reference_code=reference_code,
+                )
+                self._session.add(access_request)
+                self._session.flush()
+            return access_request, True
+        except IntegrityError:
+            recovered_request = self.get_telegram_access_request(telegram_user_id)
+            if recovered_request is None:
+                raise
+            return recovered_request, False
 
     def claim_telegram_update(self, update_id: int) -> bool:
         """Claim an update ID atomically, returning false when Telegram already delivered it."""

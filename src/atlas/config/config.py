@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     public_base_url: AnyHttpUrl = AnyHttpUrl("http://localhost:8080")
     telegram_bot_token: SecretStr | None = None
     telegram_webhook_secret: SecretStr | None = None
+    telegram_admin_user_id: int | None = Field(default=None, gt=0)
     telegram_login_client_id: str | None = Field(default=None, min_length=1, max_length=64)
     telegram_login_client_secret: SecretStr | None = None
     settings_login_request_ttl_minutes: int = Field(default=10, ge=1, le=60)
@@ -48,10 +49,10 @@ class Settings(BaseSettings):
             return stripped
         return value
 
-    @field_validator("telegram_login_client_id", mode="before")
+    @field_validator("telegram_login_client_id", "telegram_admin_user_id", mode="before")
     @classmethod
     def validate_optional_identifier(cls, value: object) -> object:
-        """Treat an empty optional client identifier as unconfigured."""
+        """Treat an empty optional identifier as unconfigured."""
 
         if isinstance(value, str):
             stripped = value.strip()

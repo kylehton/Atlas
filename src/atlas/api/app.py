@@ -52,7 +52,12 @@ def create_app(
     if resolved_telegram is None and resolved_settings.telegram_bot_token is not None:
         resolved_telegram = TelegramBotClient(resolved_settings.telegram_bot_token)
     telegram_service = (
-        TelegramWebhookService(session_factory, resolved_telegram, settings_service)
+        TelegramWebhookService(
+            session_factory,
+            resolved_telegram,
+            settings_service,
+            admin_telegram_user_id=resolved_settings.telegram_admin_user_id,
+        )
         if resolved_telegram is not None
         else None
     )

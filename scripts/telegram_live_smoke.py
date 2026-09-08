@@ -255,6 +255,10 @@ def _run_live_smoke() -> None:
         raise LiveSmokeError("Set ATLAS_TELEGRAM_BOT_TOKEN in .env first")
     if settings.telegram_webhook_secret is None:
         raise LiveSmokeError("Set ATLAS_TELEGRAM_WEBHOOK_SECRET in .env first")
+    if settings.telegram_admin_user_id is None:
+        raise LiveSmokeError(
+            "Set ATLAS_TELEGRAM_ADMIN_USER_ID in .env first; use atlas run telegram-id to find it"
+        )
 
     bot_token = settings.telegram_bot_token.get_secret_value()
     webhook_secret = settings.telegram_webhook_secret.get_secret_value()

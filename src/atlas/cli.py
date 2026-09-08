@@ -18,6 +18,10 @@ COMMANDS: dict[str, tuple[tuple[str, ...], str]] = {
     ),
     "start": (("start.sh",), "Build, migrate, and start the local Atlas stack."),
     "stop": (("stop.sh",), "Stop the local Atlas stack while preserving database data."),
+    "telegram-id": (
+        ("telegram-id.sh",),
+        "Read your numeric Telegram user ID from a private message to your Atlas bot.",
+    ),
     "test": (("test.sh",), "Run the deterministic unit, integration, and E2E suites."),
     "test-e2e": (("test-e2e.sh",), "Run complete local user-flow tests."),
     "test-integration": (
