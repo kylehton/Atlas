@@ -27,8 +27,8 @@ class UserPreference(TimestampMixin, Base):
     )
     timezone: Mapped[str] = mapped_column(String(64), server_default="UTC")
     morning_briefing_time: Mapped[time | None] = mapped_column(Time())
-    quiet_hours_start: Mapped[time | None] = mapped_column(Time())
-    quiet_hours_end: Mapped[time | None] = mapped_column(Time())
+    notification_window_start: Mapped[time | None] = mapped_column(Time())
+    notification_window_end: Mapped[time | None] = mapped_column(Time())
     notifications_enabled: Mapped[bool] = mapped_column(
         Boolean(),
         server_default=text("true"),
@@ -63,3 +63,4 @@ class ExternalIdentity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     provider: Mapped[str] = mapped_column(String(PROVIDER_NAME_MAX_LENGTH))
     provider_user_id: Mapped[str] = mapped_column(String(EXTERNAL_ID_MAX_LENGTH))
     provider_chat_id: Mapped[str] = mapped_column(String(EXTERNAL_ID_MAX_LENGTH))
+    provider_username: Mapped[str | None] = mapped_column(String(SHORT_TEXT_MAX_LENGTH))

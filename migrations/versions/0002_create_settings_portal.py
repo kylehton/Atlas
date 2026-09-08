@@ -18,6 +18,20 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.add_column(
+        "external_identities",
+        sa.Column("provider_username", sa.String(length=256), nullable=True),
+    )
+    op.alter_column(
+        "user_preferences",
+        "quiet_hours_start",
+        new_column_name="notification_window_start",
+    )
+    op.alter_column(
+        "user_preferences",
+        "quiet_hours_end",
+        new_column_name="notification_window_end",
+    )
+    op.add_column(
         "user_preferences",
         sa.Column(
             "notifications_enabled",
@@ -118,3 +132,14 @@ def downgrade() -> None:
     )
     op.drop_table("settings_login_requests")
     op.drop_column("user_preferences", "notifications_enabled")
+    op.alter_column(
+        "user_preferences",
+        "notification_window_end",
+        new_column_name="quiet_hours_end",
+    )
+    op.alter_column(
+        "user_preferences",
+        "notification_window_start",
+        new_column_name="quiet_hours_start",
+    )
+    op.drop_column("external_identities", "provider_username")

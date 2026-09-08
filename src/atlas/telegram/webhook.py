@@ -113,6 +113,7 @@ class TelegramWebhookService:
             provider=TELEGRAM_PROVIDER,
             provider_user_id=str(message.sender.id),
             provider_chat_id=str(message.chat.id),
+            provider_username=message.sender.username,
             display_name=message.sender.display_name,
         )
         if len(message.text) > LONG_TEXT_MAX_LENGTH:
@@ -164,6 +165,7 @@ class TelegramWebhookService:
             provider=TELEGRAM_PROVIDER,
             provider_user_id=str(callback.sender.id),
             provider_chat_id=str(callback.message.chat.id),
+            provider_username=callback.sender.username,
             display_name=callback.sender.display_name,
         )
         incoming = IncomingTelegramCallback(

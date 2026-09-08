@@ -84,6 +84,7 @@ class AtlasRepository:
         provider: str,
         provider_user_id: str,
         provider_chat_id: str,
+        provider_username: str | None,
         display_name: str | None,
     ) -> ExternalIdentity:
         """Return one stable Atlas identity, creating its user on first contact."""
@@ -94,6 +95,11 @@ class AtlasRepository:
         )
         if identity is not None:
             identity.provider_chat_id = provider_chat_id
+            if provider_username is not None:
+                identity.provider_username = provider_username
+            user = self.get_user(identity.user_id)
+            if user is not None:
+                user.display_name = display_name
             return identity
 
         try:
@@ -106,6 +112,7 @@ class AtlasRepository:
                     provider=provider,
                     provider_user_id=provider_user_id,
                     provider_chat_id=provider_chat_id,
+                    provider_username=provider_username,
                 )
                 self._session.add(identity)
                 self._session.flush()
@@ -119,6 +126,8 @@ class AtlasRepository:
             if identity is None:
                 raise
             identity.provider_chat_id = provider_chat_id
+            if provider_username is not None:
+                identity.provider_username = provider_username
             return identity
 
     def get_external_identity_by_provider(

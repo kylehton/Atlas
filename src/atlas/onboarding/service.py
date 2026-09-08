@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from atlas.db.models import SettingsBrowserSession, SettingsLoginRequest, UserPreference
 from atlas.db.repositories import AtlasRepository
 from atlas.db.session import session_scope
+from atlas.shared.field_types import ShortText
 from atlas.telegram.browser_auth import (
     TelegramAuthenticationError,
     TelegramBrowserAuth,
@@ -57,10 +58,16 @@ class IssuedSettingsSession:
 @dataclass(frozen=True, slots=True)
 class SettingsPreferences:
     timezone: str
-    quiet_hours_start: time | None
-    quiet_hours_end: time | None
+    notification_window_start: time | None
+    notification_window_end: time | None
     notifications_enabled: bool
     notifications_on_weekends: bool
+
+
+@dataclass(frozen=True, slots=True)
+class SettingsProfile:
+    display_name: ShortText | None
+    telegram_username: ShortText | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -229,13 +236,31 @@ class SettingsService:
                 raise SettingsAccessDenied
             return _snapshot_preferences(preferences)
 
+    def get_profile(self, session_token: str) -> SettingsProfile:
+        """Return only the authenticated user's display-safe Telegram profile fields."""
+
+        with session_scope(self._session_factory) as database_session:
+            repository = AtlasRepository(database_session)
+            settings_session = self._require_session(repository, session_token)
+            user = repository.get_user(settings_session.user_id)
+            identity = repository.get_user_external_identity(
+                user_id=settings_session.user_id,
+                provider=TELEGRAM_PROVIDER,
+            )
+            if user is None or identity is None:
+                raise SettingsAccessDenied
+            return SettingsProfile(
+                display_name=user.display_name,
+                telegram_username=identity.provider_username,
+            )
+
     def update_preferences(
         self,
         session_token: str,
         *,
         timezone: str,
-        quiet_hours_start: time | None,
-        quiet_hours_end: time | None,
+        notification_window_start: time | None,
+        notification_window_end: time | None,
         notifications_enabled: bool,
         notifications_on_weekends: bool,
     ) -> SettingsPreferences:
@@ -248,8 +273,8 @@ class SettingsService:
             if preferences is None:
                 raise SettingsAccessDenied
             preferences.timezone = timezone
-            preferences.quiet_hours_start = quiet_hours_start
-            preferences.quiet_hours_end = quiet_hours_end
+            preferences.notification_window_start = notification_window_start
+            preferences.notification_window_end = notification_window_end
             preferences.notifications_enabled = notifications_enabled
             preferences.notifications_on_weekends = notifications_on_weekends
             return _snapshot_preferences(preferences)
@@ -316,8 +341,8 @@ def _pkce_challenge(verifier: str) -> str:
 def _snapshot_preferences(preferences: UserPreference) -> SettingsPreferences:
     return SettingsPreferences(
         timezone=preferences.timezone,
-        quiet_hours_start=preferences.quiet_hours_start,
-        quiet_hours_end=preferences.quiet_hours_end,
+        notification_window_start=preferences.notification_window_start,
+        notification_window_end=preferences.notification_window_end,
         notifications_enabled=preferences.notifications_enabled,
         notifications_on_weekends=preferences.notifications_on_weekends,
     )

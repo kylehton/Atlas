@@ -72,6 +72,7 @@ async def test_webhook_verifies_secret_preserves_identity_and_deduplicates(
                     "is_bot": False,
                     "first_name": "Atlas",
                     "last_name": "Tester",
+                    "username": "atlas_tester",
                 },
                 "chat": {"id": chat_id, "type": "private"},
                 "text": text,
@@ -156,6 +157,7 @@ async def test_webhook_verifies_secret_preserves_identity_and_deduplicates(
         )
         assert identity is not None
         assert identity.provider_chat_id == str(chat_id)
+        assert identity.provider_username == "atlas_tester"
         user_id = identity.user_id
 
     proactive = await TelegramMessagingService(

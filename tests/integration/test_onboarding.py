@@ -74,6 +74,7 @@ def _create_telegram_user(
                 provider="telegram",
                 provider_user_id=provider_user_id,
                 provider_chat_id=provider_user_id,
+                provider_username="settings_user",
             )
         )
         return user
@@ -121,7 +122,17 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
     ):
         page = await client.get("/settings")
         assert page.status_code == 200
-        assert "Manage when and how Atlas contacts you" in page.text
+        assert "User Settings" in page.text
+        timezone_options = (await client.get("/settings/timezones")).json()["timezones"]
+        assert timezone_options == [
+            {"value": "America/Los_Angeles", "label": "Pacific Time (UTC-08:00)"},
+            {"value": "America/Chicago", "label": "Central Time (UTC-06:00)"},
+            {"value": "America/New_York", "label": "Eastern Time (UTC-05:00)"},
+            {"value": "Pacific/Honolulu", "label": "Hawaii Time (UTC-10:00)"},
+            {"value": "Asia/Tokyo", "label": "Tokyo (UTC+09:00)"},
+            {"value": "Asia/Seoul", "label": "Seoul (UTC+09:00)"},
+            {"value": "Asia/Taipei", "label": "Taiwan (UTC+08:00)"},
+        ]
         assert "frame-ancestors 'none'" in page.headers["content-security-policy"]
 
         state = await _start_login(client, request_token)
@@ -137,13 +148,17 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
         )
         session_token = client.cookies.get(SETTINGS_SESSION_COOKIE)
         assert session_token is not None
+        assert (await client.get("/settings/profile")).json() == {
+            "display_name": "Settings user",
+            "telegram_username": "settings_user",
+        }
 
         update = await client.put(
             "/settings/preferences",
             json={
                 "timezone": "America/Los_Angeles",
-                "quiet_hours_start": "22:30:00",
-                "quiet_hours_end": "07:00:00",
+                "notification_window_start": "09:00:00",
+                "notification_window_end": "21:00:00",
                 "notifications_enabled": True,
                 "notifications_on_weekends": False,
             },
@@ -151,8 +166,8 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
         assert update.status_code == 200
         assert update.json() == {
             "timezone": "America/Los_Angeles",
-            "quiet_hours_start": "22:30:00",
-            "quiet_hours_end": "07:00:00",
+            "notification_window_start": "09:00:00",
+            "notification_window_end": "21:00:00",
             "notifications_enabled": True,
             "notifications_on_weekends": False,
         }
@@ -160,6 +175,7 @@ async def test_matching_telegram_login_opens_settings_and_saves_preferences(
 
         assert (await client.delete("/settings/session")).status_code == 204
         assert (await client.get("/settings/preferences")).status_code == 401
+        assert (await client.get("/settings/profile")).status_code == 401
 
     with session_scope(postgres_session_factory) as database_session:
         stored_request = database_session.scalar(

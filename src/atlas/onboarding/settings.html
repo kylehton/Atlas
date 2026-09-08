@@ -2,60 +2,158 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Atlas settings</title>
     <link rel="stylesheet" href="/settings/assets/settings.css">
     <script src="/settings/assets/settings.js" defer></script>
   </head>
-  <body>
+  <body class="access-only">
     <main>
-      <section id="access-message">
+      <section id="access-message" class="access-card">
         <p id="access-status" role="status">Checking your session…</p>
       </section>
 
-      <section id="settings-content" hidden>
-        <header>
-          <p class="eyebrow">ATLAS</p>
-          <h1>Settings</h1>
-          <p class="subtitle">Manage when and how Atlas contacts you.</p>
-        </header>
-
-        <p id="settings-status" role="status">Signed in through Telegram.</p>
-
+      <section id="settings-content" class="settings-shell" hidden>
         <form id="preferences">
-          <label>
-            Timezone
-            <input id="timezone" name="timezone" autocomplete="off" required>
-          </label>
-
-          <div class="row">
-            <label>
-              Quiet hours start
-              <input id="quiet-hours-start" name="quiet_hours_start" type="time">
-            </label>
-            <label>
-              Quiet hours end
-              <input id="quiet-hours-end" name="quiet_hours_end" type="time">
-            </label>
+          <div class="progress-dash" aria-hidden="true">
+            <span class="complete"></span>
+            <span class="complete"></span>
+            <span class="complete"></span>
+            <span></span>
           </div>
 
-          <label class="check">
-            <input id="notifications-enabled" name="notifications_enabled" type="checkbox">
-            Enable notifications
-          </label>
-          <label class="check">
-            <input
-              id="notifications-on-weekends"
-              name="notifications_on_weekends"
-              type="checkbox"
-            >
-            Allow notifications on weekends
-          </label>
-
-          <div class="actions">
-            <button type="submit">Save settings</button>
-            <button id="logout" class="secondary" type="button">Log out</button>
+          <div class="account-card">
+            <div class="account-summary">
+              <div class="telegram-avatar" aria-hidden="true">
+                <span>➤</span>
+                <i></i>
+              </div>
+              <div class="account-copy">
+                <div class="account-title">
+                  <strong id="telegram-account-name">Telegram</strong>
+                  <span class="connected-badge">Connected</span>
+                </div>
+                <p id="telegram-account-detail">Verified settings session</p>
+              </div>
+            </div>
+            <span class="verified-icon" title="Verified through Telegram" aria-label="Verified">
+              ✓
+            </span>
           </div>
+
+          <header class="settings-header">
+            <h1>User Settings</h1>
+            <p>
+              Configure when and how your personal assistant reaches you on Telegram without
+              interrupting your flow.
+            </p>
+          </header>
+
+          <p id="settings-status" class="status-message" role="status">
+            Signed in through Telegram.
+          </p>
+
+          <section class="form-section" aria-labelledby="timezone-heading">
+            <div class="section-heading">
+              <h2 id="timezone-heading"><span aria-hidden="true">◎</span>Your local timezone</h2>
+              <p>Ensures briefings and reminders arrive at the right local time.</p>
+            </div>
+            <div class="input-card timezone-card">
+              <span class="field-icon" aria-hidden="true">◷</span>
+              <select id="timezone" name="timezone" required>
+                <option value="" disabled selected>Loading timezones…</option>
+              </select>
+              <span class="select-icon" aria-hidden="true">⌄</span>
+            </div>
+          </section>
+
+          <section class="form-section" aria-labelledby="notification-window-heading">
+            <div class="section-heading">
+              <h2 id="notification-window-heading">
+                <span aria-hidden="true">◐</span>Daily notification window
+              </h2>
+              <p>Routine assistant notifications are delivered during this range.</p>
+            </div>
+            <div class="time-grid">
+              <label class="time-card">
+                <span class="time-label"><i aria-hidden="true">☀</i>START TIME</span>
+                <input
+                  id="notification-window-start"
+                  name="notification_window_start"
+                  type="time"
+                >
+              </label>
+              <label class="time-card">
+                <span class="time-label"><i aria-hidden="true">◒</i>END TIME</span>
+                <input
+                  id="notification-window-end"
+                  name="notification_window_end"
+                  type="time"
+                >
+              </label>
+            </div>
+            <div class="duration-row">
+              <span><i aria-hidden="true">◴</i>Computed allowance</span>
+              <strong id="notification-window-duration">No window configured</strong>
+            </div>
+          </section>
+
+          <section class="form-section" aria-labelledby="delivery-heading">
+            <div class="section-heading compact">
+              <h2 id="delivery-heading">Delivery rules</h2>
+            </div>
+            <div class="preference-card">
+              <label class="preference-option">
+                <input id="notifications-enabled" name="notifications_enabled" type="checkbox">
+                <span class="checkbox" aria-hidden="true"></span>
+                <span class="preference-copy">
+                  <strong>Enable Telegram notifications</strong>
+                  <small>
+                    Receive routine briefings, important alerts, and proactive reminders in your
+                    chat.
+                  </small>
+                </span>
+              </label>
+              <div class="divider"></div>
+              <label class="preference-option">
+                <input
+                  id="notifications-on-weekends"
+                  name="notifications_on_weekends"
+                  type="checkbox"
+                >
+                <span class="checkbox" aria-hidden="true"></span>
+                <span class="preference-copy">
+                  <strong>Allow weekend alerts</strong>
+                  <small>Deliver briefings and personal reminders on Saturdays and Sundays.</small>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <aside class="notification-window-note">
+            <span class="note-icon" aria-hidden="true">☾</span>
+            <div>
+              <h2>Notification window protected</h2>
+              <p>
+                Outside your active window, non-urgent summaries and reminders are queued silently
+                until the next window begins.
+              </p>
+            </div>
+          </aside>
+
+          <footer class="settings-actions">
+            <button id="submit-button" class="primary-button" type="submit">
+              <span id="submit-label">Save &amp; Update Atlas</span>
+              <span aria-hidden="true">➤</span>
+            </button>
+            <button id="logout" class="logout-button" type="button">
+              <span aria-hidden="true">↪</span>
+              <span>Log out of Telegram Session</span>
+            </button>
+            <p class="session-note">
+              <span aria-hidden="true">●</span><span id="session-note-label">Session secured by Telegram</span>
+            </p>
+          </footer>
         </form>
       </section>
     </main>

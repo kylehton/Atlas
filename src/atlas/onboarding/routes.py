@@ -12,9 +12,11 @@ from atlas.onboarding.service import (
     SettingsIdentityMismatch,
     SettingsLoginUnavailable,
     SettingsPreferences,
+    SettingsProfile,
     SettingsService,
 )
-from atlas.shared.field_types import TimezoneName
+from atlas.shared.field_types import ShortText, TimezoneName
+from atlas.shared.timezones import SUPPORTED_TIMEZONES, TIMEZONE_OPTIONS
 
 SETTINGS_SESSION_COOKIE = "atlas_settings_session"
 
@@ -31,20 +33,36 @@ class TelegramAuthorizationPayload(BaseModel):
     authorization_url: str
 
 
+class TimezoneOptionPayload(BaseModel):
+    value: TimezoneName
+    label: ShortText
+
+
+class TimezoneOptionsPayload(BaseModel):
+    timezones: tuple[TimezoneOptionPayload, ...]
+
+
+class SettingsProfilePayload(BaseModel):
+    display_name: ShortText | None
+    telegram_username: ShortText | None
+
+
 class SettingsPreferencesPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     timezone: TimezoneName
-    quiet_hours_start: time | None = None
-    quiet_hours_end: time | None = None
+    notification_window_start: time | None = None
+    notification_window_end: time | None = None
     notifications_enabled: bool = True
     notifications_on_weekends: bool = True
 
     @field_validator("timezone")
     @classmethod
     def validate_timezone(cls, value: str) -> str:
-        """Accept only timezone identifiers understood by the runtime timezone database."""
+        """Accept only Atlas-supported identifiers present in the runtime timezone database."""
 
+        if value not in SUPPORTED_TIMEZONES:
+            raise ValueError("timezone is not currently supported by Atlas")
         try:
             ZoneInfo(value)
         except ZoneInfoNotFoundError:
@@ -52,11 +70,13 @@ class SettingsPreferencesPayload(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_quiet_hours_pair(self) -> "SettingsPreferencesPayload":
-        """Require both quiet-hour boundaries so notification behavior is unambiguous."""
+    def validate_notification_window_pair(self) -> "SettingsPreferencesPayload":
+        """Require both window boundaries so notification behavior is unambiguous."""
 
-        if (self.quiet_hours_start is None) != (self.quiet_hours_end is None):
-            raise ValueError("quiet_hours_start and quiet_hours_end must be set together")
+        if (self.notification_window_start is None) != (self.notification_window_end is None):
+            raise ValueError(
+                "notification_window_start and notification_window_end must be set together"
+            )
         return self
 
 
@@ -75,6 +95,18 @@ def settings_styles() -> Response:
 @router.get("/assets/settings.js", include_in_schema=False)
 def settings_script() -> Response:
     return Response(_asset_text("settings.js"), media_type="text/javascript")
+
+
+@router.get("/timezones")
+def get_timezone_options(response: Response) -> TimezoneOptionsPayload:
+    """Return the curated IANA timezone names accepted by settings validation."""
+
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    return TimezoneOptionsPayload(
+        timezones=tuple(
+            TimezoneOptionPayload(value=value, label=label) for value, label in TIMEZONE_OPTIONS
+        )
+    )
 
 
 @router.post("/auth/telegram/start")
@@ -148,6 +180,19 @@ def get_settings_preferences(request: Request, response: Response) -> SettingsPr
     return _preference_payload(preferences)
 
 
+@router.get("/profile")
+def get_settings_profile(request: Request, response: Response) -> SettingsProfilePayload:
+    """Expose a minimal profile only to the authenticated settings session."""
+
+    service: SettingsService = request.app.state.settings_service
+    try:
+        profile = service.get_profile(_session_token(request))
+    except SettingsAccessDenied:
+        raise _access_denied() from None
+    response.headers["Cache-Control"] = "no-store"
+    return _profile_payload(profile)
+
+
 @router.put("/preferences")
 def update_settings_preferences(
     payload: SettingsPreferencesPayload,
@@ -159,8 +204,8 @@ def update_settings_preferences(
         preferences = service.update_preferences(
             _session_token(request),
             timezone=payload.timezone,
-            quiet_hours_start=payload.quiet_hours_start,
-            quiet_hours_end=payload.quiet_hours_end,
+            notification_window_start=payload.notification_window_start,
+            notification_window_end=payload.notification_window_end,
             notifications_enabled=payload.notifications_enabled,
             notifications_on_weekends=payload.notifications_on_weekends,
         )
@@ -195,10 +240,17 @@ def _session_token(request: Request) -> str:
 def _preference_payload(preferences: SettingsPreferences) -> SettingsPreferencesPayload:
     return SettingsPreferencesPayload(
         timezone=preferences.timezone,
-        quiet_hours_start=preferences.quiet_hours_start,
-        quiet_hours_end=preferences.quiet_hours_end,
+        notification_window_start=preferences.notification_window_start,
+        notification_window_end=preferences.notification_window_end,
         notifications_enabled=preferences.notifications_enabled,
         notifications_on_weekends=preferences.notifications_on_weekends,
+    )
+
+
+def _profile_payload(profile: SettingsProfile) -> SettingsProfilePayload:
+    return SettingsProfilePayload(
+        display_name=profile.display_name,
+        telegram_username=profile.telegram_username,
     )
 
 
