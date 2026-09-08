@@ -398,9 +398,7 @@ router = APIRouter()
 
 
 def _new_access_reference_code() -> str:
-    return "".join(
-        secrets.choice(_CHECK_AC_ALPHABET) for _ in range(ACCESS_REFERENCE_CODE_LENGTH)
-    )
+    return "".join(secrets.choice(_CHECK_AC_ALPHABET) for _ in range(ACCESS_REFERENCE_CODE_LENGTH))
 
 
 def _parse_access_decision(value: str) -> tuple[AccessDecision, str] | None:
