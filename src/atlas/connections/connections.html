@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Atlas connections</title>
+    <link rel="stylesheet" href="/connections/assets/connections.css">
+    <script src="/connections/assets/connections.js" defer></script>
+  </head>
+  <body class="access-only">
+    <main>
+      <section id="access-message" class="access-card">
+        <p id="access-status" role="status">Checking your session…</p>
+      </section>
+
+      <section id="connections-content" class="connections-shell" hidden>
+        <header>
+          <p class="eyebrow">ATLAS PORTAL</p>
+          <h1>Connections</h1>
+          <p id="profile-label">Signed in through Telegram.</p>
+        </header>
+
+        <p id="connection-message" class="status-message" role="status"></p>
+
+        <article class="provider-card">
+          <div class="provider-heading">
+            <div class="google-mark" aria-hidden="true">G</div>
+            <div>
+              <h2>Google Workspace</h2>
+              <p id="google-account">Not connected</p>
+            </div>
+            <span id="google-status" class="status-badge">Disconnected</span>
+          </div>
+
+          <div class="capability-list">
+            <div class="capability-row">
+              <div>
+                <h3>Gmail</h3>
+                <p>Draft messages, manage mail, and receive important-email notifications.</p>
+              </div>
+              <button id="connect-gmail" class="connect-button" type="button">Connect</button>
+            </div>
+            <div class="capability-row">
+              <div>
+                <h3>Google Calendar</h3>
+                <p>Read, create, update, and delete your calendar events.</p>
+              </div>
+              <button id="connect-calendar" class="connect-button" type="button">Connect</button>
+            </div>
+          </div>
+
+          <button id="disconnect-google" class="disconnect-button" type="button" hidden>
+            Disconnect Google account
+          </button>
+        </article>
+
+        <nav aria-label="Portal pages">
+          <a href="/notifications">Notification settings</a>
+        </nav>
+      </section>
+    </main>
+  </body>
+</html>

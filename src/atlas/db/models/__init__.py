@@ -6,7 +6,7 @@ from atlas.db.models.access import (
     TelegramAccessRequest,
     TelegramAccessRequestStatus,
 )
-from atlas.db.models.integration import Integration, IntegrationStatus
+from atlas.db.models.integration import GoogleOAuthRequest, Integration, IntegrationStatus
 from atlas.db.models.onboarding import SettingsBrowserSession, SettingsLoginRequest
 from atlas.db.models.telegram import ProcessedTelegramUpdate
 from atlas.db.models.user import ExternalIdentity, User, UserPreference
@@ -19,6 +19,7 @@ __all__ = [
     "ACCESS_REFERENCE_CODE_LENGTH",
     "Integration",
     "IntegrationStatus",
+    "GoogleOAuthRequest",
     "ProcessedTelegramUpdate",
     "SettingsBrowserSession",
     "SettingsLoginRequest",

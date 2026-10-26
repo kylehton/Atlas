@@ -1,0 +1,259 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f6fafe;
+  color: #171c20;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f6fafe;
+}
+
+body.access-only {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body.access-only main {
+  height: 100%;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  display: grid;
+  place-items: center;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.access-card,
+.provider-card {
+  border: 1px solid #dfe3e7;
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.75rem rgb(23 28 32 / 8%);
+}
+
+.access-card {
+  width: min(28rem, 100%);
+  padding: 1.5rem;
+  color: #3e4850;
+  text-align: center;
+}
+
+.access-card p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.connections-shell {
+  width: min(43rem, 100%);
+  margin: 0 auto;
+  padding: max(1.25rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(2rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+header {
+  margin-bottom: 1.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: #00658f;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 7vw, 2.25rem);
+}
+
+header > p:last-child,
+.provider-heading p,
+.capability-row p {
+  color: #52606a;
+}
+
+header > p:last-child {
+  margin: 0.35rem 0 0;
+}
+
+.status-message {
+  min-height: 1.25rem;
+  margin: 0 0 0.75rem;
+  color: #00658f;
+  font-size: 0.85rem;
+}
+
+.provider-card {
+  padding: 1rem;
+}
+
+.provider-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+}
+
+.google-mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eef4ff;
+  color: #2764cf;
+  font-size: 1.3rem;
+  font-weight: 750;
+}
+
+h2,
+h3,
+.provider-heading p,
+.capability-row p {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1rem;
+}
+
+.provider-heading p {
+  margin-top: 0.2rem;
+  overflow: hidden;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #eaeef3;
+  color: #3e4850;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.status-badge[data-status="connected"] {
+  background: #e2f7ed;
+  color: #12603d;
+}
+
+.status-badge[data-status="degraded"],
+.status-badge[data-status="disconnecting"],
+.status-badge[data-status="reauthorization_required"] {
+  background: #fff2d8;
+  color: #76520b;
+}
+
+.capability-list {
+  border-top: 1px solid #e5e9ed;
+  border-bottom: 1px solid #e5e9ed;
+}
+
+.capability-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.capability-row + .capability-row {
+  border-top: 1px solid #e5e9ed;
+}
+
+h3 {
+  font-size: 0.9rem;
+}
+
+.capability-row p {
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button {
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.connect-button {
+  min-width: 5.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  background: #167fb2;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.disconnect-button {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem;
+  border: 1px solid #d8a5a5;
+  background: #fff;
+  color: #9b2525;
+}
+
+nav {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+nav a {
+  color: #00658f;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 30rem) {
+  .provider-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .status-badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .capability-row {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .connect-button {
+    width: 100%;
+  }
+}

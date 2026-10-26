@@ -277,6 +277,11 @@ button {
   font: inherit;
 }
 
+.portal-link {
+  color: #00658f;
+  font-size: 0.82rem;
+}
+
 .timezone-card select,
 .time-card input {
   min-width: 0;

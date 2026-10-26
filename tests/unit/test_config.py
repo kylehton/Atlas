@@ -1,4 +1,5 @@
 import pytest
+from cryptography.fernet import Fernet
 from pydantic import ValidationError
 
 from atlas.config.config import Settings
@@ -11,6 +12,7 @@ def test_production_rejects_local_database() -> None:
 
 def test_blank_optional_secrets_are_not_stored() -> None:
     settings = Settings(
+        _env_file=None,
         telegram_bot_token="",
         telegram_admin_user_id="",  # type: ignore[arg-type]
         google_client_secret="  ",
@@ -33,3 +35,23 @@ def test_telegram_browser_login_requires_complete_credentials() -> None:
             telegram_login_client_id="client-id",
             telegram_login_client_secret=None,
         )
+
+
+def test_google_oauth_requires_complete_credentials_and_encryption_key() -> None:
+    with pytest.raises(ValidationError, match="must be set together"):
+        Settings(_env_file=None, google_client_id="client-id")
+
+    with pytest.raises(ValidationError, match="credential_encryption_key is required"):
+        Settings(
+            _env_file=None,
+            google_client_id="client-id",
+            google_client_secret="client-secret",
+        )
+
+    settings = Settings(
+        _env_file=None,
+        google_client_id="client-id",
+        google_client_secret="client-secret",
+        credential_encryption_key=Fernet.generate_key().decode(),
+    )
+    assert settings.google_client_id == "client-id"

@@ -56,6 +56,12 @@ class IssuedSettingsSession:
 
 
 @dataclass(frozen=True, slots=True)
+class AuthenticatedPortalSession:
+    id: UUID
+    user_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class SettingsPreferences:
     timezone: str
     notification_window_start: time | None
@@ -235,6 +241,24 @@ class SettingsService:
             if preferences is None:
                 raise SettingsAccessDenied
             return _snapshot_preferences(preferences)
+
+    def authenticated_user_id(self, session_token: str) -> UUID:
+        """Resolve the user behind a valid portal session for other portal features."""
+
+        return self.authenticated_session(session_token).user_id
+
+    def authenticated_session(self, session_token: str) -> AuthenticatedPortalSession:
+        """Resolve the stable ID and owner of a valid portal session."""
+
+        with session_scope(self._session_factory) as database_session:
+            settings_session = self._require_session(
+                AtlasRepository(database_session),
+                session_token,
+            )
+            return AuthenticatedPortalSession(
+                id=settings_session.id,
+                user_id=settings_session.user_id,
+            )
 
     def get_profile(self, session_token: str) -> SettingsProfile:
         """Return only the authenticated user's display-safe Telegram profile fields."""

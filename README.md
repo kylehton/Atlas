@@ -29,6 +29,7 @@ through natural conversation.
 - ECR image publishing and EC2 deployment automation
 - Telegram-verified notification settings with expiring login requests and shared portal sessions
 - Admin-approved Telegram access requests with idempotent Approve/Deny actions
+- Incremental Google OAuth for Gmail and Calendar with encrypted refresh-token storage
 
 ---
 
@@ -164,6 +165,33 @@ its Login Widget credentials are added to `.env`. It then guides you through mes
 button, Telegram-authenticated notification settings, preference saving, and logout. Cleanup deletes
 the temporary webhook and test environment; remove the temporary BotFather URLs when prompted. This
 interactive test is intentionally excluded from normal tests, builds, and CI.
+
+### Google connections
+
+In Google Cloud, configure the OAuth consent screen, enable the Gmail and Google Calendar APIs, and
+create a Web application OAuth client. Add this exact authorized redirect URI:
+
+```text
+https://atlas.example.com/connections/google/callback
+```
+
+When the consent screen is in testing mode, add each allowed Atlas user as a Google test user. Then
+configure the client and a dedicated credential-encryption key:
+
+```bash
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+```dotenv
+ATLAS_GOOGLE_CLIENT_ID=<google-web-client-id>
+ATLAS_GOOGLE_CLIENT_SECRET=<google-web-client-secret>
+ATLAS_CREDENTIAL_ENCRYPTION_KEY=<generated-fernet-key>
+```
+
+Keep the encryption key stable and secret: losing it makes stored Google refresh tokens unusable.
+After signing into the Atlas portal from `/notifications`, open **Manage Google connections** to
+authorize Gmail and Calendar separately. Atlas requests each capability incrementally, stores only
+the encrypted refresh token, and removes it when the Google account is disconnected.
 
 ### Local model
 

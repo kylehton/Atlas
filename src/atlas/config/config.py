@@ -2,6 +2,7 @@ import re
 from functools import lru_cache
 from typing import Literal
 
+from cryptography.fernet import Fernet
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
@@ -20,8 +21,10 @@ class Settings(BaseSettings):
     telegram_login_client_secret: SecretStr | None = None
     settings_login_request_ttl_minutes: int = Field(default=10, ge=1, le=60)
     settings_session_ttl_hours: int = Field(default=2, ge=1, le=24)
-    google_client_id: str | None = None
+    google_client_id: str | None = Field(default=None, min_length=1, max_length=256)
     google_client_secret: SecretStr | None = None
+    credential_encryption_key: SecretStr | None = None
+    google_oauth_request_ttl_minutes: int = Field(default=10, ge=1, le=30)
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -34,6 +37,7 @@ class Settings(BaseSettings):
         "telegram_webhook_secret",
         "telegram_login_client_secret",
         "google_client_secret",
+        "credential_encryption_key",
         mode="before",
     )
     @classmethod
@@ -49,7 +53,12 @@ class Settings(BaseSettings):
             return stripped
         return value
 
-    @field_validator("telegram_login_client_id", "telegram_admin_user_id", mode="before")
+    @field_validator(
+        "telegram_login_client_id",
+        "telegram_admin_user_id",
+        "google_client_id",
+        mode="before",
+    )
     @classmethod
     def validate_optional_identifier(cls, value: object) -> object:
         """Treat an empty optional identifier as unconfigured."""
@@ -57,6 +66,19 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             stripped = value.strip()
             return stripped or None
+        return value
+
+    @field_validator("credential_encryption_key")
+    @classmethod
+    def validate_credential_encryption_key(cls, value: SecretStr | None) -> SecretStr | None:
+        """Require the URL-safe 32-byte key format used by Fernet."""
+
+        if value is None:
+            return None
+        try:
+            Fernet(value.get_secret_value().encode("ascii"))
+        except (UnicodeEncodeError, ValueError):
+            raise ValueError("credential_encryption_key must be a valid Fernet key") from None
         return value
 
     @model_validator(mode="after")
@@ -102,6 +124,18 @@ class Settings(BaseSettings):
             )
         if self.environment == "production" and self.public_base_url.scheme != "https":
             raise ValueError("production public_base_url must use HTTPS")
+        return self
+
+    @model_validator(mode="after")
+    def validate_google_oauth(self) -> "Settings":
+        """Require a complete Google OAuth configuration before enabling connections."""
+
+        has_client_id = self.google_client_id is not None
+        has_client_secret = self.google_client_secret is not None
+        if has_client_id != has_client_secret:
+            raise ValueError("google_client_id and google_client_secret must be set together")
+        if has_client_id and self.credential_encryption_key is None:
+            raise ValueError("credential_encryption_key is required for Google OAuth")
         return self
 
 

@@ -10,7 +10,15 @@ from atlas.api.health import router as health_router
 from atlas.api.middleware import add_request_context
 from atlas.config.config import Settings, get_settings
 from atlas.config.observability import configure_logging
+from atlas.connections.routes import router as connections_router
 from atlas.db.session import create_database_engine, create_session_factory
+from atlas.integrations.google import (
+    CredentialCipher,
+    GoogleConnectionService,
+    GoogleOAuth,
+    GoogleOAuthClient,
+    OAuthStateSigner,
+)
 from atlas.onboarding import SettingsService
 from atlas.onboarding.auth_routes import router as portal_auth_router
 from atlas.onboarding.routes import router as notification_settings_router
@@ -25,6 +33,7 @@ def create_app(
     database_engine: Engine | None = None,
     telegram: TelegramCapability | None = None,
     telegram_browser_auth: TelegramBrowserAuth | None = None,
+    google_oauth: GoogleOAuth | None = None,
 ) -> FastAPI:
     """Create the API with explicit dependencies when provided, or configured defaults."""
 
@@ -47,6 +56,32 @@ def create_app(
         telegram_auth=resolved_browser_auth,
         login_request_ttl=timedelta(minutes=resolved_settings.settings_login_request_ttl_minutes),
         session_ttl=timedelta(hours=resolved_settings.settings_session_ttl_hours),
+    )
+    resolved_google_oauth = google_oauth
+    if (
+        resolved_google_oauth is None
+        and resolved_settings.google_client_id is not None
+        and resolved_settings.google_client_secret is not None
+    ):
+        resolved_google_oauth = GoogleOAuthClient(
+            resolved_settings.google_client_id,
+            resolved_settings.google_client_secret,
+        )
+    credential_key = (
+        resolved_settings.credential_encryption_key.get_secret_value()
+        if resolved_settings.credential_encryption_key is not None
+        else None
+    )
+    credential_cipher = CredentialCipher(credential_key) if credential_key is not None else None
+    state_signer = OAuthStateSigner(credential_key) if credential_key is not None else None
+    google_connection_service = GoogleConnectionService(
+        session_factory,
+        settings_service,
+        public_base_url=str(resolved_settings.public_base_url),
+        oauth=resolved_google_oauth,
+        credential_cipher=credential_cipher,
+        state_signer=state_signer,
+        oauth_request_ttl=timedelta(minutes=resolved_settings.google_oauth_request_ttl_minutes),
     )
     resolved_telegram = telegram
     if resolved_telegram is None and resolved_settings.telegram_bot_token is not None:
@@ -75,6 +110,8 @@ def create_app(
             await resolved_telegram.aclose()
         if isinstance(resolved_browser_auth, TelegramOidcClient):
             await resolved_browser_auth.aclose()
+        if isinstance(resolved_google_oauth, GoogleOAuthClient):
+            await resolved_google_oauth.aclose()
         resolved_engine.dispose()
 
     application = FastAPI(title="Atlas", version="0.1.0", lifespan=lifespan)
@@ -83,10 +120,12 @@ def create_app(
     application.state.telegram_webhook_service = telegram_service
     application.state.telegram_messaging_service = telegram_messaging_service
     application.state.settings_service = settings_service
+    application.state.google_connection_service = google_connection_service
     add_request_context(application)
     application.include_router(health_router)
     application.include_router(portal_auth_router)
     application.include_router(notification_settings_router)
+    application.include_router(connections_router)
     application.include_router(telegram_router)
     return application
 
@@ -95,7 +134,8 @@ app = create_app()
 
 
 def run() -> None:
-    uvicorn.run("atlas.api.app:app", host="0.0.0.0", port=8000)
+    # Atlas middleware logs safe paths; Uvicorn access logs can include OAuth query credentials.
+    uvicorn.run("atlas.api.app:app", host="0.0.0.0", port=8000, access_log=False)
 
 
 if __name__ == "__main__":

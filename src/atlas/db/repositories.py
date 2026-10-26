@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from atlas.db.base import Base
 from atlas.db.models import (
     ExternalIdentity,
+    GoogleOAuthRequest,
     Integration,
+    IntegrationStatus,
     ProcessedTelegramUpdate,
     SettingsBrowserSession,
     SettingsLoginRequest,
@@ -33,6 +35,11 @@ class AtlasRepository:
 
     def get_user(self, user_id: UUID) -> User | None:
         return self._session.get(User, user_id)
+
+    def get_user_for_update(self, user_id: UUID) -> User | None:
+        """Lock a user row to serialize creation of user-owned singleton records."""
+
+        return self._session.scalar(select(User).where(User.id == user_id).with_for_update())
 
     def get_preferences(self, user_id: UUID) -> UserPreference | None:
         return self._session.get(UserPreference, user_id)
@@ -67,6 +74,19 @@ class AtlasRepository:
                 SettingsBrowserSession.session_hash == session_hash
             )
         )
+
+    def get_settings_session_by_id(
+        self,
+        session_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> SettingsBrowserSession | None:
+        """Load a portal session, optionally locking it for authorization finalization."""
+
+        statement = select(SettingsBrowserSession).where(SettingsBrowserSession.id == session_id)
+        if for_update:
+            statement = statement.with_for_update()
+        return self._session.scalar(statement)
 
     def get_telegram_access_request(
         self,
@@ -234,6 +254,55 @@ class AtlasRepository:
                 Integration.id == integration_id,
                 Integration.user_id == user_id,
             )
+        )
+
+    def get_integrations_by_provider_capability(
+        self,
+        *,
+        user_id: UUID,
+        provider: str,
+        capability: str,
+    ) -> tuple[Integration, ...]:
+        """Return every account registered for one provider capability and owner."""
+
+        return tuple(
+            self._session.scalars(
+                select(Integration).where(
+                    Integration.user_id == user_id,
+                    Integration.provider == provider,
+                    Integration.capability == capability,
+                )
+            )
+        )
+
+    def get_integration_by_provider_account(
+        self,
+        *,
+        provider: str,
+        capability: str,
+        account_identifier: str,
+    ) -> Integration | None:
+        """Resolve the single Atlas owner of an external provider account."""
+
+        return self._session.scalar(
+            select(Integration).where(
+                Integration.provider == provider,
+                Integration.capability == capability,
+                Integration.account_identifier == account_identifier,
+                Integration.status != IntegrationStatus.DISCONNECTED,
+            )
+        )
+
+    def get_google_oauth_request_for_update(
+        self,
+        state_hash: str,
+    ) -> GoogleOAuthRequest | None:
+        """Lock an OAuth attempt while its one-use state is consumed."""
+
+        return self._session.scalar(
+            select(GoogleOAuthRequest)
+            .where(GoogleOAuthRequest.state_hash == state_hash)
+            .with_for_update()
         )
 
     def get_workflow(self, *, user_id: UUID, workflow_id: UUID) -> Workflow | None:
