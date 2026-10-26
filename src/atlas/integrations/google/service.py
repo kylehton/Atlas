@@ -242,9 +242,7 @@ class GoogleConnectionService:
         returned_scopes = grant.scopes
         try:
             if returned_scopes is None:
-                effective_scopes = frozenset(
-                    (*BASE_SCOPES, CAPABILITY_SCOPES[context.capability])
-                )
+                effective_scopes = frozenset((*BASE_SCOPES, CAPABILITY_SCOPES[context.capability]))
             else:
                 if CAPABILITY_SCOPES[context.capability] not in returned_scopes:
                     raise GoogleAuthorizationRejected
@@ -622,9 +620,7 @@ class GoogleConnectionService:
                 in {IntegrationStatus.DISCONNECTED, IntegrationStatus.DISCONNECTING}
             ):
                 return False
-            encoded_token = _encode_encrypted_credential(
-                credential_cipher.encrypt(refresh_token)
-            )
+            encoded_token = _encode_encrypted_credential(credential_cipher.encrypt(refresh_token))
             integration.encrypted_pending_revocation_tokens = [
                 *integration.encrypted_pending_revocation_tokens,
                 encoded_token,

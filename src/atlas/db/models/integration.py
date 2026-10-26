@@ -51,8 +51,7 @@ class Integration(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "account_identifier",
             unique=True,
             postgresql_where=text(
-                "provider = 'google' AND capability = 'workspace' "
-                "AND status != 'disconnected'"
+                "provider = 'google' AND capability = 'workspace' AND status != 'disconnected'"
             ),
         ),
         CheckConstraint(

@@ -101,9 +101,7 @@ class FakeGoogleOAuth:
             access_token=f"temporary-access-{self.exchange_count}",
             refresh_token=refresh_token,
             scopes=(
-                None
-                if self.exchange_count in self.omit_scope_on_exchanges
-                else frozenset(scopes)
+                None if self.exchange_count in self.omit_scope_on_exchanges else frozenset(scopes)
             ),
             expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
@@ -1080,12 +1078,15 @@ async def test_disconnect_does_not_erase_a_concurrent_reauthorization(
         assert integration.status == IntegrationStatus.DISCONNECTING
         integration_id = integration.id
 
-    assert service._retain_failed_refresh_token(
-        user_id=user.id,
-        integration_id=integration_id,
-        refresh_token="late-refresh",
-        credential_cipher=CredentialCipher(credential_key),
-    ) is False
+    assert (
+        service._retain_failed_refresh_token(
+            user_id=user.id,
+            integration_id=integration_id,
+            refresh_token="late-refresh",
+            credential_cipher=CredentialCipher(credential_key),
+        )
+        is False
+    )
 
     with pytest.raises(GoogleConnectionBusy):
         service.begin_authorization(session_token, "gmail")
